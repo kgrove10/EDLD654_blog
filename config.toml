@@ -32,11 +32,12 @@ ignoreFiles = ["\\.Rmd$", "\\.Rmarkdown$", "_cache$", "\\.knit\\.md$", "\\.utf8\
     MathJaxVersion = "2.7.5"
 
     # path to the favicon, under "static"
-    favicon = "AOKlogo.png"
-
+    favicon = "favicon.ico"
+    
     [params.logo]
     url = "aokthick.png"
     width = 30
     height = 50
     alt = "Logo"
+
 
