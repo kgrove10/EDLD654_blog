@@ -1,0 +1,22 @@
+---
+title: Data Description
+author: ''
+date: '2020-11-30'
+slug: data-description
+categories: []
+tags: []
+---
+
+This post will describe our data using the following guidelines:
+
+While all teams will work with the same data, the procedures you use with the data are likely to be different than those used by other teams. Describe core features of the data, any additional data you joined in and why, and basic descriptives. Note that this may be a relevant blog post on its own, or a major section within a single blog post.
+
+The description should be sufficiently clear that the instructor understands all the variables that were included in your modeling, and how the final analytic dataset was constructed, without actually viewing your code. While specific code snippets can be included in this section to add clarity, the reader should not have to rely on this code to understand the data preparation.
+
+Provide a summary of the variables (e.g., how many categorical/continuous variables were included, what were the range of values, etc.), and any feature engineering applied to the data. If missing data are present, discuss how these values were handled, variable transformations, etc. Use this section to explain your data splitting process for model evaluation.
+
+
+```{r}
+
+```
+
