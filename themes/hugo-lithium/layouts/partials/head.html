@@ -11,7 +11,8 @@
 <meta property="og:title" content="{{ .Title }} - {{ .Site.Title }}">
 {{ end }}
 {{ with .Site.Params.favicon }}
-  <link href='{{ . | absURL }}' rel='icon' type='image/x-icon'/>
+  <link rel="icon" href="favicon.ico" type="image/x-icon"> 
+  <link rel="shortcut icon" href="favicon.ico" type="image/x-icon"> 
 {{ end }}
 
 {{ if eq .RelPermalink "/" }}
