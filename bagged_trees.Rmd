@@ -5,33 +5,48 @@ date: "11/30/2020"
 output: html_document
 ---
 
+```{r eval = FALSE}
+knitr::opts_chunk$set(eval = FALSE)
+```
 
-We’ll be focusing on decision tree methods using `bag_tree()`, `random_forest()`, and `boost_tree()`. 
+![There are so many types of trees](https://www.homestratosphere.com/wp-content/uploads/2019/07/Two-categories-of-trees.jpg)
 
-#Loading libraries
-```{r}
+
+We’re going to walk through the basics for getting off the ground with machine learning using primarily the {tidymodels} package. Specifically, we will demontrate the application of three different tree-based methods for predicting student test scores. For further information about the {tidymodels}, you can visit [this page](https://www.tidymodels.org/).
+
+#Getting started 
+
+First, we will load some libraries into your environment that we will be using throughout this post. The classic {tidyverse} and for wrangling and {rio} for importing, our new {tidymodels} and the {skimr} package to help us explore our data and a host of other packages that will be required to run our machine learning models. Finally, we will load {baguette}, which is our key package in this post since we will be focusing on bagged trees. Make sure you check out the other posts about the other cool tree-based models. 
+
+```{r eval = FALSE}
 library(tidyverse) # manipulating data
 library(rio) #importing data
 library(tidymodels) 
 library(skimr) # data visualization
 library(baguette) # bagged trees
+library(knitr) #table visualization 
 ```
 
 
-#read in data
-```{r}
-full_train <- read_csv("data/train.csv",
-                       col_types = cols(.default = col_guess(), 
-                                        calc_admn_cd = col_character()))  %>% 
-  select(-classification)
-```
+#Read in data
+
+We will be using simulated data which approximates reading and math scores for 3rd-8th grade students in Oregon public schools. Please see [this page for more detials](LINK FOR BLOG POST HERE). For the purpose of demonstration, we’ll be sampling 1% of the data with `sample_frac()` to keep computer processing time manageable.
 
 ```{r}
 set.seed(500)
+
+# import data and perform initial cleaning:
+# Note: the data is called 'train.csv', but as we highlighted in the text above, for processing efficiency, we will actually further split this into its own training and testing data
+
+full_train <- read_csv("data/train.csv",
+                       col_types = cols(.default = col_guess(), 
+                                        calc_admn_cd = col_character()))  %>% 
+  select(-classification) %>% 
+  sample_frac(.001)  # sample 1% of the data to reduce run time
+
 # import fall membership report data and clean 
 sheets <- readxl::excel_sheets("data/fallmembershipreport_20192020.xlsx")
 ode_schools <- readxl::read_xlsx(here::here("data/fallmembershipreport_20192020.xlsx"), sheet = sheets[4])
-str(ode_schools)
 
 ethnicities <- ode_schools %>% select(attnd_schl_inst_id = `Attending School ID`, 
  sch_name = `School Name`, 
@@ -39,6 +54,10 @@ ethnicities <- ode_schools %>% select(attnd_schl_inst_id = `Attending School ID`
   janitor::clean_names()
 
 names(ethnicities) <- gsub("x2019_20_percent", "p", names(ethnicities))
+
+```
+
+```{r warning= FALSE}
 
 #function to check id is unique
 unique_id <- function(x, ...) {
@@ -95,24 +114,24 @@ frl <- left_join(frl, stu_counts)
 
 # add frl data to train data
 frl_fulltrain <- left_join(full_train, frl)
-
-
 ```
 
+Our three datasets are all loaded, cleaned and join together to make one cohesive data set to use for our tree-based modelling. After joining, the data contains both student-level variables (e.g. gender, ethnicity, enrollment in special education/talented and gifted programs, etc.) and district-level variables (e.g. school longitude and latitude, proportion of students who qualify for free and reduced-price lunch, etc.), all of which will be included for each 3 of our {tidymodels} tree-based examples.
 
 #Explore data
-We’ll use the `skim()` function from {skimr} to take a closer look at our variables. Many numeric predictors are clearly non-normal (see histograms below), but this is not a problem since tree-based methods are robust to non-normality.
+
+We will use the `skim()` function from {skimr} to take a closer look at the distribution of our variables. Many numeric predictors are non-normal (see histograms below), but this is not a problem since tree-based methods are robust to non-normality.
 
 ```{r}
 frl_fulltrain %>% 
   select(-contains("id"), -ncessch) %>%  # remove ID and irrelevant variables
-  mutate(tst_dt = lubridate::as_date(lubridate::mdy_hms(tst_dt))) %>% # covert test date to date
+  mutate(tst_dt = lubridate::as_date(lubridate::mdy_hms(tst_dt))) %>% # convert test date to date
   modify_if(is.character, as.factor) %>%  # convert character vars to factors
   skim() %>% 
   select(-starts_with("numeric.p")) # remove quartiles
 ```
 
-While most of our predictors are categorical, we can use {corrplot} to better visualize the relationships among the numeric variables shown in the table above.
+We will also use {corrplot} to better visualize the relationships among the numeric variables shown in the table above. However, this is a limited visual given that most of our predictors are acutally categorical.
 
 ```{r}
 #look at relations between variables
@@ -125,11 +144,11 @@ frl_fulltrain %>%
 ```
 #Split the data 
 
-First, we split the data into two separate sets: a “training” set and a “testing” set. The training set is used to train a model and, if desired, to adjust (“tune” in ML language) the model’s hyperparameters before evaluating its final performance on the test data. This helps assess the “out of sample” accuracy and limit overfitting to the training set. 
+First, we split the data into two separate sets: a “training” set and a “testing” set. The training set is used to train a model and, if desired, to adjust (“tune” in ML language) the model’s hyperparameters before evaluating its final performance on the test data. This helps us assess the “out of sample” accuracy and limit overfitting to the training set. Overfitting refers to a model that models the training data too well. It occurs when a model learns the detail and noise in the training data to the extent that it negatively impacts the performance of the model on new data. This means that the noise or random fluctuations in the training data is picked up and learned as concepts by the model. The problem is that these concepts do not apply to new data and negatively impact the models ability to generalize. 
 
-For this, we use the initial_split() function from the {rsample} package. The default is that 75% of the data goes to the training set and 25% to the test set, but this can be adjusted with the prop argument. 
+To split our data, we use the initial_split() function from the {rsample} package. The default is that 75% of the data goes to the training set and 25% to the test set, but this can be adjusted with the prop argument. 
 
-To prevent over-fitting, we resample the data using vfold_cv() which outputs k-fold cross-validated versions of the training data, where k is the number of times we resample. By setting k to 6 data sets, we get a better estimate of the model’s out-of-sample accuracy. This decreases bias from over-fitting. And of course, we should always remember to set the seeds first.
+To prevent overfitting, we resample the data using vfold_cv() which outputs k-fold cross-validated versions of the training data, where k is the number of times we resample. By setting k to 6 data sets, we get a better estimate of the model’s out-of-sample accuracy. This decreases bias from overfitting. And of course, we should always remember to set the seeds first.
 
 ```{r}
 set.seed(500)
@@ -140,7 +159,23 @@ test <- testing(edu_split)
 train_cv <- vfold_cv(train, strata = "score", v = 6)
 ```
 
-#Preparing the baking the recipe
+#Preparing abd baking the recipe (i.e. Feature engineering)
+
+Before we add in our data to the model, we are going to set up an object that pre-processes our data. This is called a recipe. To create a recipe, we will first specify a formula for our model, indicating which variable is our outcome and which are our predictors. Here, we will use all variables other than score as predictors. We then specify a series of pre-processing steps for our data that directs our recipe to assign our variables a role, encode, omit or impute missing data, and/or model other feature engineering steps . 
+
+Our recipe does the following:
+
+* Sets score as the outcome, and models all other variables in the dataset
+* Transforms dates into numberic variables
+* Removes variables that contain "bnch"
+* Sets the role of ID variables (including ncessch) 
+* Imputes missing data
+* Removes zero-variance and near-zero variance predictor variables 
+* Dummy codes all nominal predictor variables
+
+Note: The order of these operations matters. If you end up with a rank-deficient model you need to revise your recipe. 
+
+A complete list of possible pre-processing steps can be found [here](https://www.tidymodels.org/find/recipes/)
 
 ```{r}
 rec <- recipe(score ~., train) %>%
@@ -158,19 +193,34 @@ rec <- recipe(score ~., train) %>%
   step_nzv(all_predictors()) %>%
   step_interact(terms = ~ starts_with('lat'):starts_with("lon"))
 
-prep(rec)
-
-cores <- parallel::detectCores()
+prep(rec) 
 ```
 
+#Setting up a model and workflow
+
+There are a few core elements that you will need to specify to create a model. This apllies to all models. 
+
+* The type of model: Here we will be focusing on tree-based models. 
+* The engine: `set_engine()` calls the package to support the model you specified.
+* The mode: `set_mode()` indicates the type of prediction you would like to use in your model. You choose between regression and classification. In our case, we will be choosing regression because we are looking to predict student scores, which is a continuous predictor.
+* The arguments: `set_args()` allows you to set values for various parameters for your model, each model type will have a specific set of parameters that can be altered.
+
+The final step here is to creat a workflow. A workflow combines all the elements we set up to create a cohesive framework, called a workflow, so we can run our desired models following the same exact framework. The next section shows three examples of specifying models and creating a workflow for different decision tree methods.
+
 #Bagged trees
+
 A bagged tree approach creates multiple subsets of data from the training set which are randomly chosen with replacement. Each subset of data is used to train a given decision tree. In the end, we have an ensemble of different models. The predictions from all the different trees are averaged together, giving us a stronger prediction than one tree could independently.
 
 ```{r}
 set.seed(500)
+
+#Specify model
+
 mod_bag <- bag_tree() %>%
   set_mode("regression") %>%
   set_engine("rpart", times = 10) # 10 bootstrap resamples
+
+#Create workflow
 
 wflow_bag <- workflow() %>% 
   add_recipe(rec) %>%
@@ -178,6 +228,7 @@ wflow_bag <- workflow() %>%
 ```
 
 ##Fitting the bagged tree model
+
 ```{r}
 set.seed(500)
 
@@ -193,7 +244,7 @@ fit_bag <- fit_resamples(
 #Bagged trees visualization 
 The plot below shows the root nodes from a bagged tree made of 60 trees (6 folds x 10 bootstrapped resamples). Root nodes are the 1st node in a decision tree, and they are determined by which variable best optimizes a loss function (e.g., minimizes RMSE for continuous outcomes or Gini Index for categorical outcomes). 
 
-```{r}
+```{r }
 # extract roots
 bag_roots <-  function(x){
   x %>% 
@@ -217,9 +268,11 @@ bag_roots(fit_bag) %>%
 
 ```
 
+
+
 #Prediction model 
 
-```{r}
+```{r eval=FALSE}
 #make predictions on test.csv
 full_test <- read_csv("data/test.csv",
                       col_types = cols(.default = col_guess(), 
