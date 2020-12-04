@@ -124,7 +124,7 @@ rf_tune_res <- tune_grid(
                               extract = function(x) extract_model(x)))
 ```
 
-Once this runs (it took about 2.5 hours on talapas), we can collect the metrics from our model. The code below gathers the best 5 models based on `rsq`, `rmse`, and `huber_loss` (note that "best" for rmse and huber loss is lower values, while "best" for rsq is higher values, and thus we reverse the order before slicing the top values for rmse). We then bind these values together and save them as a .csv so I can include the results in this blog post. 
+Once this runs (it took about 4 hours on talapas), we can collect the metrics from our model. The code below gathers the best 5 models based on `rsq`, `rmse`, and `huber_loss` (note that "best" for rmse and huber loss is lower values, while "best" for rsq is higher values, and thus we reverse the order before slicing the top values for rmse). We then bind these values together and save them as a .csv so I can include the results in this blog post. 
 
 ```{r eval = FALSE}
 rf_tune_met <- rf_tune_res %>%
@@ -180,7 +180,7 @@ blogdown::shortcode("figure", src ='"/random_forest_model/RFTunedMetrics.pdf"', 
 
 As we can see from these results, our best model, according to all three of our metrics is Model 01, with `mtry` = 5, `trees` = 1323, and `min_n` = 38. 
 
-This is in line with the general guidelines for these predictors: `mtry` between 2 and `p` (representing the number of predictors in the data), `trees` at least 1000, and `min_n` starting between 1 and 10 and adjust depending on impact to accuracy and run time. Here, our `min_n` is much larger, but as we can see from the visualization, it improves as the value increases. In fact, we could consider increasing beyond the tuned value of 38, since it still appears to be decreasing, but in the interest of computational expense, we will stick with this selected value of 38. 
+This is in line with the general guidelines for these predictors: `mtry` between 2 and `p` (representing the number of predictors in the data), `trees` at least 1000, and `min_n` starting between 1 and 10 and adjust depending on impact to accuracy and run time. Here, our `min_n` is much larger, but as we can see from the visualization, our metrics argely improve as the value of `min_n` increases. In fact, we could consider increasing beyond the tuned value of 38, since it still appears to be decreasing, but in the interest of computational expense, we will stick with this selected value of 38. 
 
 We then select the best results using `select_best`, based on the `rmse` metric (although in this case, all our metrics are in agreement), and will use these hyperparameter values going forward.  
 

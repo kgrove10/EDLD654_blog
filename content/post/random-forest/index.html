@@ -92,7 +92,7 @@ metrics_eval &lt;- metric_set(rmse,
   control = control_resamples(verbose = TRUE,
                               save_pred = TRUE,
                               extract = function(x) extract_model(x)))</code></pre>
-<p>Once this runs (it took about 2.5 hours on talapas), we can collect the metrics from our model. The code below gathers the best 5 models based on <code>rsq</code>, <code>rmse</code>, and <code>huber_loss</code> (note that “best” for rmse and huber loss is lower values, while “best” for rsq is higher values, and thus we reverse the order before slicing the top values for rmse). We then bind these values together and save them as a .csv so I can include the results in this blog post.</p>
+<p>Once this runs (it took about 4 hours on talapas), we can collect the metrics from our model. The code below gathers the best 5 models based on <code>rsq</code>, <code>rmse</code>, and <code>huber_loss</code> (note that “best” for rmse and huber loss is lower values, while “best” for rsq is higher values, and thus we reverse the order before slicing the top values for rmse). We then bind these values together and save them as a .csv so I can include the results in this blog post.</p>
 <pre class="r"><code>rf_tune_met &lt;- rf_tune_res %&gt;%
   collect_metrics() 
 
@@ -308,7 +308,7 @@ ggsave(&quot;RFTunedMetrics.pdf&quot;,
        scale = 1)</code></pre>
 {{% figure src="/random_forest_model/RFTunedMetrics.pdf" alt="Tuned Metrics Visualization" %}}
 <p>As we can see from these results, our best model, according to all three of our metrics is Model 01, with <code>mtry</code> = 5, <code>trees</code> = 1323, and <code>min_n</code> = 38.</p>
-<p>This is in line with the general guidelines for these predictors: <code>mtry</code> between 2 and <code>p</code> (representing the number of predictors in the data), <code>trees</code> at least 1000, and <code>min_n</code> starting between 1 and 10 and adjust depending on impact to accuracy and run time. Here, our <code>min_n</code> is much larger, but as we can see from the visualization, it improves as the value increases. In fact, we could consider increasing beyond the tuned value of 38, since it still appears to be decreasing, but in the interest of computational expense, we will stick with this selected value of 38.</p>
+<p>This is in line with the general guidelines for these predictors: <code>mtry</code> between 2 and <code>p</code> (representing the number of predictors in the data), <code>trees</code> at least 1000, and <code>min_n</code> starting between 1 and 10 and adjust depending on impact to accuracy and run time. Here, our <code>min_n</code> is much larger, but as we can see from the visualization, our metrics argely improve as the value of <code>min_n</code> increases. In fact, we could consider increasing beyond the tuned value of 38, since it still appears to be decreasing, but in the interest of computational expense, we will stick with this selected value of 38.</p>
 <p>We then select the best results using <code>select_best</code>, based on the <code>rmse</code> metric (although in this case, all our metrics are in agreement), and will use these hyperparameter values going forward.</p>
 <pre class="r"><code>rf_best &lt;- select_best(rf_tune_res, metric = &quot;rmse&quot;)</code></pre>
 <p>Next, we will finalize our workflow, based on this best result, using the function <code>finalize_workflow()</code>. This will add our best hyperparameters we selected above to the workflow we set up above.</p>
