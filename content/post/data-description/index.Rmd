@@ -36,7 +36,7 @@ We’re going to walk through the basics for getting off the ground with machine
 
 First, we will load some libraries into your environment that we will be using throughout this post. The classic {tidyverse} and for wrangling and {rio} for importing, our new {tidymodels} and the {skimr} package to help us explore our data and a host of other packages that will be required to run our machine learning models. Finally, we will load {baguette}, which is our key package in this post since we will be focusing on bagged trees. Make sure you check out the other posts about the other cool tree-based models. 
 
-```{r eval = FALSE}
+```{r }
 library(tidyverse) # manipulating data
 library(rio) #importing data
 library(tidymodels) 
@@ -56,11 +56,11 @@ set.seed(500)
 # import data and perform initial cleaning:
 # Note: the data is called 'train.csv', but as we highlighted in the text above, for processing efficiency, we will actually further split this into its own training and testing data
 
-full_train <- read_csv("data/train.csv",
+full_train <- read_csv("data", "train.csv",
                        col_types = cols(.default = col_guess(), 
                                         calc_admn_cd = col_character()))  %>% 
   select(-classification) %>% 
-  sample_frac(.001)  # sample 1% of the data to reduce run time
+  sample_frac(.0001)  # sample 1% of the data to reduce run time
 
 # import fall membership report data and clean 
 sheets <- readxl::excel_sheets("data/fallmembershipreport_20192020.xlsx")
