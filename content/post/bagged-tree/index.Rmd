@@ -121,7 +121,7 @@ We see from the plot above that setting $b$ to 175 would be the optiomal number 
 
 ### Bagged trees visualization 
 
-The plot below shows the root nodes from a bagged tree made of 60 trees (6 folds x 10 bootstrapped resamples). Root nodes are the 1st node in a decision tree, and they are determined by which variable best optimizes a loss function (e.g., minimizes RMSE for continuous outcomes or Gini Index for categorical outcomes). 
+The plot below shows the root nodes from a bagged tree made of 60 trees (6 folds x 10 bootstrapped resamples). Root nodes are the 1st node in a decision tree, and they are determined by which variable best optimizes a loss function (e.g., minimizes RMSE for continuous outcomes or Gini Index for categorical outcomes).  
 
 ```{r eval=FALSE}
 # extract roots
