@@ -1,6 +1,6 @@
 ---
 title: Bagged Tree
-author: ''
+author: Ouafaa Hmaddi
 date: '2020-12-03'
 slug: bagged-tree
 categories: []
@@ -12,29 +12,123 @@ In this post, we will outline how we fit a bagged tree model to our data.
 
 **What does the Bagged Tree Model do?**
 
+Bagged trees are just a special case of random forests where there is no sampling of columns when each tree is built. A bagged tree approach creates multiple subsets of data from the training set which are randomly chosen with replacement. Each subset of data is used to train a given decision tree. In the end, we have an ensemble of different models. This is a general approach known as **bagging**, or **b**ootstrap **agg**regation. The predictions from all the different trees are averaged together, giving us a stronger prediction than one tree could independently.
 
 **Hyperparameters to be optimized**
 
 
 
+
 **Why did we select this model?**
 
+We selected this model as one of our three fits because we wanted to explore several models that utilize decision trees. Bagged tree specifically leads to more stable model predictions as it reduces model variability. Thus, it is important to note here that bagging would not be recommended when the model already has low variance as it increases computational burdens without improving the model. For example, linear regression models will generally not change much in their model predictions when using bagging. Overall, the noisier our data is, the more bags (i.e. resamples) we add to reduce the noise.
 
+To illustrate this, it is important to understand that bagging like boosting is an ensemble method, which combines several decision trees to produce better predictive performance than utilizing a single decision tree. This is basically, like when you feel like you are not learning much by studying alone so you go to the library and look for a study group to learn faster with an "ensemble" of other students. 
 
 **Bagged Tree Model Assumptions**
 
+Similar to the the decision trees model and other decision-tree based models, the bagged tree model share the same assumptions. Because decision trees function to split the data, they have no probabilistic model, and therefore we do not need to make any assumptions about the underlying data distribution. Bagging does not make any assumptions about the underlying data distribution.
 
 **Model Performance Evaluation**
+We will evaluate the performance of this model after training by applying it to our held out test split from the training data (also called the validation set). We will examine rmse (appropriately, the root mean squared error, the standard deviation of the residuals), rsq (R-squared, the proportion of variance in the dependent variable explained by the variables in our regression model), and huber-loss (a loss function that represents absolute error, and is less sensitive to outliers than the mse and rmse), but largely rely upon the rmse as our single evaluator of the performance of this and the other tree models we present in this blog in order to select our final model.
 
+## Fitting the Bagged Tree Model
 
-## Fitting our Bagged Tree Model
+First, we set up our data as you can see in the data description and setup [here](https://edld654finalproject.netlify.app/2020/11/30/data-description/).
 
 **Model Fitting Procedures** 
 
+```{r eval=FALSE}
+set.seed(500)
+
+#Specify model
+
+mod_bag <- bag_tree() %>%
+  set_mode("regression") %>%
+  set_engine("rpart", times = 10) # 10 bootstrap resamples
+
+#Create workflow
+
+wflow_bag <- workflow() %>% 
+  add_recipe(rec) %>%
+  add_model(mod_bag)
+```
 
 
+
+```{r eval=FALSE}
+set.seed(500)
+
+fit_bag <- fit_resamples(
+  wflow_bag,
+  vfold_cv(train),
+  metrics = metric_set(rmse, rsq),
+  control = control_resamples(verbose = TRUE,
+                              save_pred = TRUE,
+                              extract = function(x) extract_model(x)))
+```
+
+###Bagged trees visualization 
+
+The plot below shows the root nodes from a bagged tree made of 60 trees (6 folds x 10 bootstrapped resamples). Root nodes are the 1st node in a decision tree, and they are determined by which variable best optimizes a loss function (e.g., minimizes RMSE for continuous outcomes or Gini Index for categorical outcomes). 
+
+```{r eval=FALSE}
+# extract roots
+bag_roots <-  function(x){
+  x %>% 
+  select(.extracts) %>% 
+  unnest(cols = c(.extracts)) %>% 
+  mutate(models = map(.extracts,
+                  ~.x$model_df)) %>% 
+  select(-.extracts) %>% 
+  unnest(cols = c(models)) %>% 
+  mutate(root = map_chr(model,
+                     ~as.character(.x$fit$frame[1, 1]))) %>%
+  select(root)  
+}
+
+# plot
+bag_roots(fit_bag) %>% 
+  ggplot(mapping = aes(x = fct_rev(fct_infreq(root)))) + 
+  geom_bar() + 
+  coord_flip() + 
+  labs(x = "Root", y = "Count")
+
+```
 
 **Model Fitting Results**
+
+
+```{r eval=FALSE}
+#make predictions on test.csv
+full_test <- read_csv("data/test.csv",
+                      col_types = cols(.default = col_guess(), 
+                                       calc_admn_cd = col_character()))
+
+#join with ethnicity data
+full_test_eth <- left_join(full_test, ethnicities) #join with FRL dataset
+
+#join with frl
+full_test_FRL <- left_join(full_test_eth, frl)
+
+#workflow
+fit_workflow <- fit(wflow_bag, frl_fulltrain)
+
+#use model to make predictions for test dataset
+preds_final <- predict(fit_workflow, full_test_FRL) #use model to make predictions for test dataset
+
+head(preds_final)
+
+pred_frame <- tibble(Id = full_test_FRL$id, Predicted = preds_final$.pred)
+head(pred_frame, 20)
+nrow(pred_frame)
+
+#create prediction file
+write_csv(pred_frame, "fit_bag.csv")
+
+```
+
+
 
 
 
