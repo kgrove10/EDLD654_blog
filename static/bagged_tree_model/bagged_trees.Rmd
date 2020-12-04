@@ -46,7 +46,7 @@ full_train <- read_csv("data/train.csv",
 
 # import fall membership report data and clean 
 sheets <- readxl::excel_sheets("data/fallmembershipreport_20192020.xlsx")
-ode_schools <- readxl::read_xlsx(here::here("data/fallmembershipreport_20192020.xlsx"), sheet = sheets[4])
+ode_schools <- readxl::read_xlsx(here::here("static/data/fallmembershipreport_20192020.xlsx"), sheet = sheets[4])
 
 ethnicities <- ode_schools %>% select(attnd_schl_inst_id = `Attending School ID`, 
  sch_name = `School Name`, 
@@ -196,6 +196,8 @@ rec <- recipe(score ~., train) %>%
 prep(rec) 
 ```
 
+
+
 #Setting up a model and workflow
 
 There are a few core elements that you will need to specify to create a model. This apllies to all models. 
@@ -239,7 +241,49 @@ fit_bag <- fit_resamples(
   control = control_resamples(verbose = TRUE,
                               save_pred = TRUE,
                               extract = function(x) extract_model(x)))
+
+collect_metrics(fit_bag)
 ```
+
+
+```{r}
+
+pull_auc <- function(b) {
+  # specify model
+  mod <- bag_tree() %>% 
+    set_mode("regression") %>% 
+    set_args(cost_complexity = 0, min_n = 2) %>% 
+    set_engine("rpart", times = b)
+  
+  # fit model to full training dataset
+  m <- fit_resamples(mod, rec, train_cv)
+  
+  # extract the AUC & add the $b$ value
+  auc <- show_best(m, "rmse") 
+  auc$b <- b
+  
+  # return the AUC data frame
+  auc
+}
+
+# specify candidate b models
+b <- seq(5, 200, 25)
+
+# Fit models
+library(future)
+plan(multisession)
+
+aucs <- map_df(b, pull_auc)
+
+plan(sequential)
+```
+
+```{r }
+ggplot(aucs, aes(b, mean)) +
+  geom_line() +
+  geom_point() 
+```
+
 
 #Bagged trees visualization 
 The plot below shows the root nodes from a bagged tree made of 60 trees (6 folds x 10 bootstrapped resamples). Root nodes are the 1st node in a decision tree, and they are determined by which variable best optimizes a loss function (e.g., minimizes RMSE for continuous outcomes or Gini Index for categorical outcomes). 

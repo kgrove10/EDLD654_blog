@@ -36,11 +36,8 @@ We’re going to walk through the basics for getting off the ground with machine
 
 First, we will load some libraries into your environment that we will be using throughout this post. The classic {tidyverse} and for wrangling and {rio} for importing, our new {tidymodels} and the {skimr} package to help us explore our data and a host of other packages that will be required to run our machine learning models. Finally, we will load {baguette}, which is our key package in this post since we will be focusing on bagged trees. Make sure you check out the other posts about the other cool tree-based models. 
 
-<<<<<<< HEAD
-```{r }
-=======
-```{r eval = TRUE}
->>>>>>> main
+
+```{r eval = FALSE}
 library(tidyverse) # manipulating data
 library(rio) #importing data
 library(tidymodels) 
@@ -54,21 +51,21 @@ library(knitr) #table visualization
 
 We will be using simulated data which approximates reading and math scores for 3rd-8th grade students in Oregon public schools. Please see [this page for more detials](LINK FOR BLOG POST HERE). For the purpose of demonstration, we’ll be sampling 1% of the data with `sample_frac()` to keep computer processing time manageable.
 
-```{r}
+```{r eval = FALSE}
 set.seed(500)
 
 # import data and perform initial cleaning:
 # Note: the data is called 'train.csv', but as we highlighted in the text above, for processing efficiency, we will actually further split this into its own training and testing data
 
-full_train <- read_csv("data", "train.csv",
+full_train <- read_csv("data/train.csv",
                        col_types = cols(.default = col_guess(), 
                                         calc_admn_cd = col_character()))  %>% 
   select(-classification) %>% 
-  sample_frac(.0001)  # sample 1% of the data to reduce run time
+  sample_frac(.001)  # sample 1% of the data to reduce run time
 
 # import fall membership report data and clean 
-sheets <- readxl::excel_sheets("data", "fallmembershipreport_20192020.xlsx")
-ode_schools <- readxl::read_xlsx(here::here("data", "fallmembershipreport_20192020.xlsx"), sheet = sheets[4])
+sheets <- readxl::excel_sheets("data/fallmembershipreport_20192020.xlsx")
+ode_schools <- readxl::read_xlsx(here::here("data/fallmembershipreport_20192020.xlsx"), sheet = sheets[4])
 
 ethnicities <- ode_schools %>% select(attnd_schl_inst_id = `Attending School ID`, 
  sch_name = `School Name`, 
@@ -76,10 +73,9 @@ ethnicities <- ode_schools %>% select(attnd_schl_inst_id = `Attending School ID`
   janitor::clean_names()
 
 names(ethnicities) <- gsub("x2019_20_percent", "p", names(ethnicities))
-
 ```
 
-```{r warning= FALSE}
+```{r warning= FALSE, eval = FALSE}
 
 #function to check id is unique
 unique_id <- function(x, ...) {
@@ -144,7 +140,7 @@ Our three datasets are all loaded, cleaned and join together to make one cohesiv
 
 We will use the `skim()` function from {skimr} to take a closer look at the distribution of our variables. Many numeric predictors are non-normal (see histograms below), but this is not a problem since tree-based methods are robust to non-normality.
 
-```{r}
+```{r eval = FALSE}
 frl_fulltrain %>% 
   select(-contains("id"), -ncessch) %>%  # remove ID and irrelevant variables
   mutate(tst_dt = lubridate::as_date(lubridate::mdy_hms(tst_dt))) %>% # convert test date to date
@@ -153,9 +149,12 @@ frl_fulltrain %>%
   select(-starts_with("numeric.p")) # remove quartiles
 ```
 
+![T1](https://www.dropbox.com/s/vdxzvee369nx24q/Slide1.PNG?dl=0)
+![T2](https://www.dropbox.com/s/qxgz5gzdw273g33/Slide2.PNG?dl=0)
+
 We will also use {corrplot} to better visualize the relationships among the numeric variables shown in the table above. However, this is a limited visual given that most of our predictors are acutally categorical.
 
-```{r}
+```{r eval = FALSE}
 #look at relations between variables
 frl_fulltrain %>% 
   select(-contains("id"), -ncessch) %>% 
@@ -164,6 +163,9 @@ frl_fulltrain %>%
   cor(use = "complete.obs") %>% 
   corrplot::corrplot()
 ```
+
+![plot](https://www.dropbox.com/s/8a8a0u2aszufiyd/VariableRelations.png?dl=0)
+
 #Split the data 
 
 First, we split the data into two separate sets: a “training” set and a “testing” set. The training set is used to train a model and, if desired, to adjust (“tune” in ML language) the model’s hyperparameters before evaluating its final performance on the test data. This helps us assess the “out of sample” accuracy and limit overfitting to the training set. Overfitting refers to a model that models the training data too well. It occurs when a model learns the detail and noise in the training data to the extent that it negatively impacts the performance of the model on new data. This means that the noise or random fluctuations in the training data is picked up and learned as concepts by the model. The problem is that these concepts do not apply to new data and negatively impact the models ability to generalize. 
@@ -172,7 +174,7 @@ To split our data, we use the initial_split() function from the {rsample} packag
 
 To prevent overfitting, we resample the data using vfold_cv() which outputs k-fold cross-validated versions of the training data, where k is the number of times we resample. By setting k to 6 data sets, we get a better estimate of the model’s out-of-sample accuracy. This decreases bias from overfitting. And of course, we should always remember to set the seeds first.
 
-```{r}
+```{r eval=FALSE}
 set.seed(500)
 edu_split <- initial_split(frl_fulltrain)
 train <- training(edu_split)
@@ -199,7 +201,7 @@ Note: The order of these operations matters. If you end up with a rank-deficient
 
 A complete list of possible pre-processing steps can be found [here](https://www.tidymodels.org/find/recipes/)
 
-```{r}
+```{r eval=FALSE}
 rec <- recipe(score ~., train) %>%
   step_mutate(tst_dt = lubridate::mdy_hms(tst_dt),
               time_index = as.numeric(tst_dt)) %>%
