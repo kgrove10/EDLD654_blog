@@ -7,7 +7,7 @@ categories: []
 tags: []
 ---
 
-This post describes the data we utilized to fit our three models:
+This post describes the data we utilized to fit our three models: 
 
 - Describe core features of the data, any additional data you joined in and why, and basic descriptives.
 
@@ -32,18 +32,18 @@ This post describes the data we utilized to fit our three models:
 
 We’re going to walk through the basics for getting off the ground with machine learning using primarily the {tidymodels} package. Specifically, we will demontrate the application of three different tree-based methods for predicting student test scores. For further information about the {tidymodels}, you can visit [this page](https://www.tidymodels.org/).
 
-#Getting started 
+#Getting started  
 
 First, we will load some libraries into your environment that we will be using throughout this post. The classic {tidyverse} and for wrangling and {rio} for importing, our new {tidymodels} and the {skimr} package to help us explore our data and a host of other packages that will be required to run our machine learning models. Finally, we will load {baguette}, which is our key package in this post since we will be focusing on bagged trees. Make sure you check out the other posts about the other cool tree-based models. 
 
-```{r eval = FALSE}
+```{r eval = TRUE}
 library(tidyverse) # manipulating data
 library(rio) #importing data
 library(tidymodels) 
 library(skimr) # data visualization
 library(baguette) # bagged trees
 library(knitr) #table visualization 
-```
+``` 
 
 
 #Read in data
@@ -63,8 +63,8 @@ full_train <- read_csv("data/train.csv",
   sample_frac(.001)  # sample 1% of the data to reduce run time
 
 # import fall membership report data and clean 
-sheets <- readxl::excel_sheets("data/fallmembershipreport_20192020.xlsx")
-ode_schools <- readxl::read_xlsx(here::here("data/fallmembershipreport_20192020.xlsx"), sheet = sheets[4])
+sheets <- readxl::excel_sheets("data", "fallmembershipreport_20192020.xlsx")
+ode_schools <- readxl::read_xlsx(here::here("data", "fallmembershipreport_20192020.xlsx"), sheet = sheets[4])
 
 ethnicities <- ode_schools %>% select(attnd_schl_inst_id = `Attending School ID`, 
  sch_name = `School Name`, 
