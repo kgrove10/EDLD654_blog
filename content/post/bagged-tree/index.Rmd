@@ -16,8 +16,9 @@ Bagged trees are just a special case of random forests where there is no samplin
 
 **Hyperparameters to be optimized**
 
+Unlike random forrest, there is not a way to easily access the “out-of-the-box” (OOB) samples with **{baguette}**. Thankfully, we can tune the model similar to what we do with random forrest using the [**{ranger}**] package, and this will allow us to access the OOB samples. To fit a bagged tree with **{ranger}**, we set the `mtry` argument equal to the number of predictors in our data frame calculated by extracting the number of columns in the data and substracting one (to not account for the predictor).
 
-
+Overall, we tune the number of `trees` and `min_n` since `m_try` is already set depending on the number of predictors. 
 
 **Why did we select this model?**
 
@@ -38,6 +39,8 @@ First, we set up our data as you can see in the data description and setup [here
 
 **Model Fitting Procedures** 
 
+### Model Fiting
+
 ```{r eval=FALSE}
 set.seed(500)
 
@@ -54,8 +57,6 @@ wflow_bag <- workflow() %>%
   add_model(mod_bag)
 ```
 
-
-
 ```{r eval=FALSE}
 set.seed(500)
 
@@ -66,9 +67,59 @@ fit_bag <- fit_resamples(
   control = control_resamples(verbose = TRUE,
                               save_pred = TRUE,
                               extract = function(x) extract_model(x)))
+
+collect_metrics(fit_bag)
 ```
 
-###Bagged trees visualization 
+
+### Model Turning 
+
+Next, we will tune the number of trees hyperparameter. We set min_n to 2. 
+
+```{r eval=FALSE}
+
+pull_auc <- function(b) {
+  # specify model
+  mod <- bag_tree() %>% 
+    set_mode("regression") %>% 
+    set_args(cost_complexity = 0, min_n = 2) %>% 
+    set_engine("rpart", times = b)
+  
+  # fit model to full training dataset
+  m <- fit_resamples(mod, rec, train_cv)
+  
+  # extract the AUC & add the $b$ value
+  auc <- show_best(m, "rmse") 
+  auc$b <- b
+  
+  # return the AUC data frame
+  auc
+}
+
+# specify candidate b models
+b <- seq(5, 200, 25)
+
+# Fit models
+library(future)
+plan(multisession)
+
+aucs <- map_df(b, pull_auc)
+
+plan(sequential)
+```
+
+```{r eval=FALSE}
+ggplot(aucs, aes(b, mean)) +
+  geom_line() +
+  geom_point() 
+```
+
+![plot](https://www.dropbox.com/s/snu676nlu1014yi/rmse_auc.png?dl=0)
+
+We see from the plot above that setting $b$ to 175 would be the optiomal number of trees. 
+
+
+### Bagged trees visualization 
 
 The plot below shows the root nodes from a bagged tree made of 60 trees (6 folds x 10 bootstrapped resamples). Root nodes are the 1st node in a decision tree, and they are determined by which variable best optimizes a loss function (e.g., minimizes RMSE for continuous outcomes or Gini Index for categorical outcomes). 
 
@@ -96,8 +147,19 @@ bag_roots(fit_bag) %>%
 
 ```
 
-**Model Fitting Results**
+![Plot](https://www.dropbox.com/s/azkgm00earj5nvr/bagtree_root.png?dl=0)
 
+
+**Model Fitting Results**
+Finally, in order to get the results of our model with the tuned trees hyperparameter (175), we will apply this model to our full training dataset.
+
+From the fitted model, we then extract just the metrics (and save them) in order to compare the results of this bagged tree model with our random forest and boosted tree models in order to choose a final model to make student score predictions from the test data (test.csv) and to submit to kaggle.
+
+The following table shows our model fitting metric.
+
+![Metrics Table](https://www.dropbox.com/s/m8hbr7mvqkjcq1z/bag_trees%20metrics%20table.png?dl=0)
+
+The following code shows our the final fit of the model to the testing data to make predictions. 
 
 ```{r eval=FALSE}
 #make predictions on test.csv
