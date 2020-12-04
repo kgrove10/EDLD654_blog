@@ -30,13 +30,13 @@ Other hyperparameters we did not tune but that could be tuned for random forest 
 
 **Why did we select this model?**
 
-We selected this model as one of our 3 fits because we wanted to explore several models that utilize decision trees. Regression using decision trees in general does a good job of capturing non-linear features in the data as compared to simpler linear regression. Additionally, random forest models (along with boosted tree models, which we also examine), generally have pretty good out of the box perfomance, and we thought it would be interesting to compare their performances when tuned. 
+We selected this model as one of our 3 fits because we wanted to explore several models that utilize decision trees. Regression using decision trees in general does a good job of capturing non-linear features in the data as compared to simpler linear regression. Additionally, random forest models (along with boosted tree models, which we also examine), generally have pretty good out of the box performance, and we thought it would be interesting to compare their performances when tuned. 
 
-When is it appropriate to use random forest models? As outlined above and below, random forest models are generally a fairly solid choice, because they don't make any assumptions about the underlying distribution of the data. The are also less influenced by outliers than other models (because they are built on averaged decision trees, so extreme values don't impact the entire model), and aren't as vulnerable to multi-collinearity, since a split on either of these highly correlated features would essentially use up the information (predictive power) that would be provided by the other highly correlated feature. However, this can also be an issue with random forest models. Because one of the multicollinear variables is used for a split whilst the other is not, it could erroniously appear that one of these highly correlated variables is much more important than the other, when in fact they are very close in their predictive power for the dependent variable. While this effect is mitigated somewhat by the use of split-variable randomization, it is not completely eliminated ([Saabas, 2014](http://blog.datadive.net/selecting-good-features-part-iii-random-forests/)). In general, one area of concern with random forest models is their difficulty of interpretation in terms of the individual impact of features on the dependent variable. In this case, we're more interested in our ability to successfully and accurately predict student scores than understanding the individual feature contribution to these scores, so the random forest model is a good choice, especially in conjunction with the bagged and boosted tree model as our goal here is to compare their performance. 
+When is it appropriate to use random forest models? As outlined above and below, random forest models are generally a fairly solid choice, because they don't make any assumptions about the underlying distribution of the data. The are also less influenced by outliers than other models (because they are built on averaged decision trees, so extreme values don't impact the entire model), and aren't as vulnerable to multi-collinearity, since a split on either of these highly correlated features would essentially use up the information (predictive power) that would be provided by the other highly correlated feature. However, this can also be an issue with random forest models. Because one of the multicollinear variables is used for a split whilst the other is not, it could erroneously appear that one of these highly correlated variables is much more important than the other, when in fact they are very close in their predictive power for the dependent variable. While this effect is mitigated somewhat by the use of split-variable randomization, it is not completely eliminated ([Saabas, 2014](http://blog.datadive.net/selecting-good-features-part-iii-random-forests/)). In general, one area of concern with random forest models is their difficulty of interpretation in terms of the individual impact of features on the dependent variable. In this case, we're more interested in our ability to successfully and accurately predict student scores than understanding the individual feature contribution to these scores, so the random forest model is a good choice, especially in conjunction with the bagged and boosted tree model as our goal here is to compare their performance. 
 
 **Random Forest Model Assumptions**
 
-Because the random forest model is built out of decision trees, it inherits their assumptions, which are fairly simple. Because decision trees function to split the data, they have no probabilistic model, and therefore we do not need to make any assumptions about the underlying data distribution. Random forest models rely upon bootstrap aggregation (bagging), which also does not make any assumptions about the underlying data distribution, but does rely upon the assumption that the data was collected in such a manner that the sampling was representative, meaning there was no systematic bias in the sample collection, and the characteristics of the sample acurately represent that of the larger group, both in presence, and in proportion represented ([Chatterjee, 2019](https://towardsdatascience.com/all-the-annoying-assumptions-31b55df246c3))
+Because the random forest model is built out of decision trees, it inherits their assumptions, which are fairly simple. Because decision trees function to split the data, they have no probabilistic model, and therefore we do not need to make any assumptions about the underlying data distribution. Random forest models rely upon bootstrap aggregation (bagging), which also does not make any assumptions about the underlying data distribution, but does rely upon the assumption that the data was collected in such a manner that the sampling was representative, meaning there was no systematic bias in the sample collection, and the characteristics of the sample accurately represent that of the larger group, both in presence, and in proportion represented ([Chatterjee, 2019](https://towardsdatascience.com/all-the-annoying-assumptions-31b55df246c3))
 
 
 **Model Performance Evaluation**
@@ -50,7 +50,7 @@ We will evaluate the performance of this model after training by applying it to 
 
 To fit our random forest model, we first imported and split the data, and applied our recipe, as described [here](https://edld654finalproject.netlify.app/2020/11/30/data-description/). The model fit was completed using the University of Oregon's "Talapas" Supercomputer, so while some example code will be included with this post, computations were conducted elsewhere, and the full code can be found on our [GitHub here](https://github.com/kgrove10/EDLD654_blog/blob/main/static/random_forest_model/RF_Talapas.R). 
 
-First, we started by coding a random forest model. For this, we utilized the function `rand_forest()` from the `parsnip` package. In this code, we set our engine to `"ranger"`, which offers fast implementation of random forests. Since it supports both classification and regression, we need to specify regression in the piped function `set_mode()`. While setting our engine, we also specify several arguments from ranger, including the number of threads, or the number of distinct processes running in parallel. In this case, we set it equal to the number of cores, so each core is exceuting one thing independently. If running locally, we could run `parallel::detectCores()`, but since we're running this code on talapas, we manually set it to the number of cores talapas posesses, 8. The argument `importance = "permutation"` is set to specify the variable importance mode. The default is `impurity` which is the Gini index, or the probability of a variable being wrongly classified when it is randomly chosen, but we set it here to be `permutation` instead.  The issue with impurity-based feature importance is that it can inflate the importance of numeric features over categorical features. Since we have both in our model, we chose to use `permutation`, which is more reliable that impurity, because it instead calculates the importance of a feature based on the increase in the model's prediction error after permuting the feature. The downside of permutation is that it is more computationally demanding, and potentially biased toward collinear predictors. 
+First, we started by coding a random forest model. For this, we utilized the function `rand_forest()` from the `parsnip` package. In this code, we set our engine to `"ranger"`, which offers fast implementation of random forests. Since it supports both classification and regression, we need to specify regression in the piped function `set_mode()`. While setting our engine, we also specify several arguments from ranger, including the number of threads, or the number of distinct processes running in parallel. In this case, we set it equal to the number of cores, so each core is executing one thing independently. If running locally, we could run `parallel::detectCores()`, but since we're running this code on talapas, we manually set it to the number of cores talapas possesses, 8. The argument `importance = "permutation"` is set to specify the variable importance mode. The default is `impurity` which is the Gini index, or the probability of a variable being wrongly classified when it is randomly chosen, but we set it here to be `permutation` instead.  The issue with impurity-based feature importance is that it can inflate the importance of numeric features over categorical features. Since we have both in our model, we chose to use `permutation`, which is more reliable that impurity, because it instead calculates the importance of a feature based on the increase in the model's prediction error after permuting the feature. The downside of permutation is that it is more computationally demanding, and potentially biased toward collinear predictors. 
 
 ```{r eval = FALSE}
 cores <- 8
@@ -174,18 +174,80 @@ ggsave("RFTunedMetrics.pdf",
 ```
 
 
-![Image Title](./static/random_forest_model/RFTunedMetrics.pdf){width=100% height=400}
+```{r echo = FALSE}
+blogdown::shortcode("figure", src ='"/random_forest_model/RFTunedMetrics.pdf"', alt = "Tuned Metrics Visualization")
+```
 
-![tuned metric plot](/random-forest/index_files/RFTunedMetrics.pdf)
+As we can see from these results, our best model, according to all three of our metrics is Model 01, with `mtry` = 5, `trees` = 1323, and `min_n` = 38. 
 
+This is in line with the general guidelines for these predictors: `mtry` between 2 and `p` (representing the number of predictors in the data), `trees` at least 1000, and `min_n` starting between 1 and 10 and adjust depending on impact to accuracy and run time. Here, our `min_n` is much larger, but as we can see from the visualization, it improves as the value increases. In fact, we could consider increasing beyond the tuned value of 38, since it still appears to be decreasing, but in the interest of computational expense, we will stick with this selected value of 38. 
 
+We then select the best results using `select_best`, based on the `rmse` metric (although in this case, all our metrics are in agreement), and will use these hyperparameter values going forward.  
 
+```{r eval = FALSE}
+rf_best <- select_best(rf_tune_res, metric = "rmse")
+```
+
+Next, we will finalize our workflow, based on this best result, using the function `finalize_workflow()`. This will add our best hyperparameters we selected above to the workflow we set up above. 
+
+```{r eval = FALSE}
+rf_wf_final <- finalize_workflow(
+  rf_tune_wflow,
+  rf_best)
+```
+
+Now, our workflow looks like this:
+
+Random Forest Model Specification (regression)
+    
+    Main Arguments:
+      mtry = 5
+      trees = 1323
+      min_n = 38
+    
+    Engine-Specific Arguments:
+      num.threads = cores
+      importance = permutation
+      verbose = TRUE
+    
+    Computational engine: ranger 
+    
+    Model fit template:
+    ranger::ranger(formula = missing_arg(), data = missing_arg(), 
+        case.weights = missing_arg(), mtry = 5, num.trees = 1323, 
+        min.node.size = 38, num.threads = cores, importance = "permutation", 
+        verbose = TRUE, seed = sample.int(10^5, 1))
 
 
 
 **Model Fitting Results**
 
-Results of our model evaluation
+Finally, in order to get the results of our model with these tuned hyperparameter values, we will apply this model to our full training dataset, `edu_split`.
+
+We do this using the following code, which applies the final workflow we created above to our full training dataset using the function `last_fit()`. From this fit, we then extract just the metrics (and save them) in order to compare the results of this random forest model with our bagged tree and boosted tree model in order to choose a final model to make student score predictions from the test data (`test.csv`) and to submit to kaggle. 
+
+```{r eval = FALSE}
+test_fit <- last_fit(rf_wf_final, edu_split)
+test_metrics <- test_fit$.metrics
+
+test_metrics %>%
+  write.csv("./RFTestMetrics.csv", row.names = FALSE)
+```
+
+Our final workflow applied to the full training dataset gives us the following results:
+
+```{r echo = FALSE}
+testres <- import(here("static", "random_forest_model", "RFTestMetrics.csv"))
+
+knitr::kable(testres)
+```
+
+In order to best compare our models, it's also important to note how long tuning and fitting this model took. Using talapas, this process took 22911.134 seconds, or approximately `r round(22911.134/60/60, 2)` hours, which is quite computationally expensive!
+
+
+
+
+
 
 
 
