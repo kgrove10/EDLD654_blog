@@ -117,7 +117,7 @@ rf_tune_res <- tune_grid(
                               save_pred = TRUE,
                               extract = function(x) extract_model(x)))
 
-#saveRDS(rf_tune_res, "RFTuneTalapas.Rds")
+saveRDS(rf_tune_res, "RFTuneTalapas.Rds")
 
 #collect metrics
 rf_tune_met <- rf_tune_res %>%

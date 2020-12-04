@@ -1,0 +1,13 @@
+---
+title: Final Model Fit
+author: ''
+date: '2020-12-03'
+slug: final-model-fit
+categories: []
+tags: []
+---
+
+Compare and contrast the different fits, including a discussion of model performance. Share code to communicate your procedures, and discuss your final model selection and the evidence that led you to this selection.
+
+You will also need to submit your final model predictions from your final model so that a quantitative indicator of prediction accuracy can be provided.
+

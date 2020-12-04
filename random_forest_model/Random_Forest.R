@@ -1,17 +1,18 @@
 #read in data
 library(tidyverse)
-full_train <- read_csv("data/train.csv",
+full_train <- read_csv("train.csv",
                        col_types = cols(.default = col_guess(), 
                                         calc_admn_cd = col_character()))  %>% 
   select(-classification)
 
 #str(full_train)
 
+library(rio)
 set.seed(500)
 # import fall membership report data and clean 
 
-sheets <- readxl::excel_sheets("data/fallmembershipreport_20192020.xlsx")
-ode_schools <- readxl::read_xlsx("data/fallmembershipreport_20192020.xlsx", sheet = sheets[4])
+sheets <- readxl::excel_sheets("fallmembershipreport_20192020.xlsx")
+ode_schools <- readxl::read_xlsx(here::here("fallmembershipreport_20192020.xlsx"), sheet = sheets[4])
 str(ode_schools)
 
 ethnicities <- ode_schools %>% select(attnd_schl_inst_id = `Attending School ID`,
@@ -23,6 +24,21 @@ names(ethnicities) <- gsub("x2019_20_percent", "p", names(ethnicities))
 
 head(ethnicities)
 
+#function to check id is unique
+unique_id <- function(x, ...) {
+  id_set <- x %>% select(...)
+  id_set_dist <- id_set %>% distinct
+  if (nrow(id_set) == nrow(id_set_dist)) {
+    TRUE
+  } else {
+    non_unique_ids <- id_set %>% 
+      filter(id_set %>% duplicated()) %>% 
+      distinct()
+    suppressMessages(
+      inner_join(non_unique_ids, x) %>% arrange(...)
+    )
+  }
+}
 
 #make ethnicities have attnd_schl_inst_id as a unique identifier - clunky, but works!
 ethnicities <- ethnicities %>%
@@ -35,19 +51,51 @@ ethnicities <- ethnicities %>%
             p_white = mean(p_white),
             p_multiracial = mean(p_multiracial))
 
+#more concise code that should work, but doesn't because of difficulties passing dataframe to mean fct
+#ethnicities <- ethnicities %>% 
+#group_by(attnd_schl_inst_id) %>% 
+#summarise(across(everything(), list(mean)))
+
+ethnicities %>% unique_id(attnd_schl_inst_id)
 
 #Join ethnicity data and training data
 full_train <- left_join(full_train, ethnicities)
 
-#dim(full_train)
+dim(full_train)
 
-# import tidied frl and student count data 
-frl <- read_csv("data/frl_stucounts.csv")
+# import and tidy free and reduced lunch data 
+frl <- rio::import("https://nces.ed.gov/ccd/Data/zip/ccd_sch_033_1718_l_1a_083118.zip",
+                   setclass = "tbl_df")  %>% 
+  janitor::clean_names()  %>% 
+  filter(st == "OR")  %>%
+  select(ncessch, lunch_program, student_count)  %>% 
+  mutate(student_count = replace_na(student_count, 0))  %>% 
+  pivot_wider(names_from = lunch_program,
+              values_from = student_count)  %>% 
+  janitor::clean_names()  %>% 
+  mutate(ncessch = as.double(ncessch))
+
+# import student counts for each school across grades
+stu_counts <- rio::import("https://github.com/datalorax/ach-gap-variability/raw/master/data/achievement-gaps-geocoded.csv", setclass = "tbl_df")  %>% 
+  filter(state == "OR" & year == 1718)  %>% 
+  count(ncessch, wt = n)  %>% 
+  mutate(ncessch = as.double(ncessch))
+
+# join frl and stu_counts data
+frl <- left_join(frl, stu_counts)
 
 # add frl data to train data
 frl_fulltrain <- left_join(full_train, frl)
 
-#dim(frl_fulltrain)
+dim(frl_fulltrain)
+
+#look at relations between variables
+frl_fulltrain %>% 
+  select(-contains("id"), -ncessch, -missing, -not_applicable) %>% 
+  select_if(is.numeric) %>% 
+  select(score, everything()) %>% 
+  cor(use = "complete.obs") %>% 
+  corrplot::corrplot()
 
 #split data and resample
 
@@ -55,9 +103,10 @@ library(tidymodels)
 
 set.seed(7895)
 edu_split <- initial_split(frl_fulltrain)
-train <- training(edu_split)
+train <- training(edu_split) %>%
+  dplyr::sample_frac(0.005)
 test <- testing(edu_split)
-train_cv <- vfold_cv(train, strata = "score", v = 10)
+train_cv <- vfold_cv(train, strata = "score", v = 2)
 
 str(train_cv)
 
@@ -80,7 +129,8 @@ rec <- recipe(score ~., train) %>%
 prep(rec)
 
 #create random forest tuning model
-cores <- 8
+cores <- parallel::detectCores()
+cores
 
 rf_def_mod <- rand_forest() %>%
   set_engine("ranger",
@@ -108,6 +158,8 @@ metrics_eval <- metric_set(rmse,
                            huber_loss)
 
 #fit the tuning model
+tictoc::tic()
+
 rf_tune_res <- tune_grid(
   rf_tune_wflow,
   train_cv,
@@ -117,7 +169,7 @@ rf_tune_res <- tune_grid(
                               save_pred = TRUE,
                               extract = function(x) extract_model(x)))
 
-#saveRDS(rf_tune_res, "RFTuneTalapas.Rds")
+tictoc::toc()
 
 #collect metrics
 rf_tune_met <- rf_tune_res %>%
@@ -154,6 +206,11 @@ ggsave("RFTunedMetrics.pdf",
        plot = last_plot(),
        scale = 1)
 
+#based on these plots, it looks like the min_n is best just below 30, where the min_n and rmse are minimized, and the rsq is maximized. 
+# I'm going to examine the values more closely between 20 and 35.
+# for the # of trees, the best point seems to be around 600(ish - rough reading from graph).  Going to examine between 500 and 1000
+# for mtry, going to try between 0 and... nevermind, seems to be doing a good job!
+
 #select best results, based on rmse:
 
 rf_best <- select_best(rf_tune_res, metric = "rmse")
@@ -164,16 +221,10 @@ rf_wf_final <- finalize_workflow(
   rf_tune_wflow,
   rf_best)
 
-#apply to test split
-test_fit <- last_fit(rf_wf_final, edu_split)
-test_metrics <- test_fit$.metrics
-
-test_metrics %>%
-  write.csv("./RFTestMetrics.csv", row.names = FALSE)
 
 #make predictions on test.csv using this final workflow
-full_test <- read_csv("data/test.csv",
-                      col_types = cols(.default = col_guess(),
+full_test <- read_csv("test.csv",
+                      col_types = cols(.default = col_guess(), 
                                        calc_admn_cd = col_character()))
 #str(full_test)
 
@@ -182,7 +233,8 @@ full_test_eth <- left_join(full_test, ethnicities) #join with FRL dataset
 #str(full_test_eth)
 
 #join with frl
-full_test_FRL <- left_join(full_test_eth, frl)
+full_test_FRL <- left_join(full_test_eth, frl) %>%
+  dplyr::sample_frac(0.005)
 
 nrow(full_test_FRL)
 
@@ -192,8 +244,6 @@ fit_workflow <- fit(rf_wf_final, frl_fulltrain)
 #use model to make predictions for test dataset
 preds_final <- predict(fit_workflow, full_test_FRL) #use model to make predictions for test dataset
 
-saveRDS(preds_final, "RF_Preds.Rds")
-
 head(preds_final)
 
 pred_frame <- tibble(Id = full_test_FRL$id, Predicted = preds_final$.pred)
@@ -201,8 +251,6 @@ head(pred_frame, 20)
 nrow(pred_frame)
 
 #create prediction file
-write_csv(pred_frame, "rf_fit.csv")
-
-
+write_csv(pred_frame, "fit_rf.csv")
 
 

@@ -57,7 +57,7 @@ set.seed(7895)
 edu_split <- initial_split(frl_fulltrain)
 train <- training(edu_split)
 test <- testing(edu_split)
-train_cv <- vfold_cv(train, strata = "score", v = 10)
+train_cv <- vfold_cv(train, strata = "score", v = 2)
 
 str(train_cv)
 
@@ -107,56 +107,62 @@ metrics_eval <- metric_set(rmse,
                            rsq, 
                            huber_loss)
 
+#create grid
+rf_grid_reg <- grid_regular(
+  mtry(c(5, 5)),
+  trees(c(1323, 1323)),
+  min_n(range = c(30, 60)),
+  levels = c(1, 1, 20))
+  
 #fit the tuning model
-rf_tune_res <- tune_grid(
+rf_grid_res <- tune_grid(
   rf_tune_wflow,
   train_cv,
-  tune = 20,
+  grid = rf_grid_reg,
   metrics = metrics_eval, #from above - same metrics of rsq, rmse, huber_loss
   control = control_resamples(verbose = TRUE,
                               save_pred = TRUE,
                               extract = function(x) extract_model(x)))
 
-#saveRDS(rf_tune_res, "RFTuneTalapas.Rds")
+saveRDS(rf_grid_res, "RFTuneTalapasGrid.Rds")
 
 #collect metrics
-rf_tune_met <- rf_tune_res %>%
+rf_grid_met <- rf_grid_res %>%
   collect_metrics() 
 
-rf_tune_rsq <- rf_tune_met %>%
+rf_grid_rsq <- rf_grid_met %>%
   filter(.metric == "rsq") %>%
   arrange(.metric, desc(mean)) %>%
   slice(1:5)
 
-rf_tune_rmse <- rf_tune_met %>%
+rf_grid_rmse <- rf_grid_met %>%
   filter(.metric == "rmse") %>%
   arrange(.metric, mean) %>%
   slice(1:5)
 
-rf_tune_hl <- rf_tune_met %>%
+rf_grid_hl <- rf_grid_met %>%
   filter(.metric == "huber_loss") %>%
   arrange(.metric, mean) %>%
   slice(1:5)
 
-rf_tune_metrics <- rbind(rf_tune_rsq, rf_tune_rmse, rf_tune_hl) 
+rf_grid_metrics <- rbind(rf_grid_rsq, rf_grid_rmse, rf_grid_hl) 
 
-rf_tune_metrics %>%
-  write.csv("./RFTuneMetrics.csv", row.names = FALSE)
+rf_grid_metrics %>%
+  write.csv("./RFTuneMetricsGrid.csv", row.names = FALSE)
 
 #look at plot of tuned metrics:
-rf_tune_res %>%
+rf_grid_res %>%
   autoplot() +
   geom_line()
 
 #save plot for use on blog:
 
-ggsave("RFTunedMetrics.pdf",
+ggsave("RFTunedMetricsGrid.pdf",
        plot = last_plot(),
        scale = 1)
 
 #select best results, based on rmse:
-
-rf_best <- select_best(rf_tune_res, metric = "rmse")
+rf_best <- select_best(rf_grid_res, metric = "rmse")
 
 #finalize our work flow based on this best result:
 
@@ -164,16 +170,10 @@ rf_wf_final <- finalize_workflow(
   rf_tune_wflow,
   rf_best)
 
-#apply to test split
-test_fit <- last_fit(rf_wf_final, edu_split)
-test_metrics <- test_fit$.metrics
-
-test_metrics %>%
-  write.csv("./RFTestMetrics.csv", row.names = FALSE)
 
 #make predictions on test.csv using this final workflow
 full_test <- read_csv("data/test.csv",
-                      col_types = cols(.default = col_guess(),
+                      col_types = cols(.default = col_guess(), 
                                        calc_admn_cd = col_character()))
 #str(full_test)
 
@@ -192,7 +192,7 @@ fit_workflow <- fit(rf_wf_final, frl_fulltrain)
 #use model to make predictions for test dataset
 preds_final <- predict(fit_workflow, full_test_FRL) #use model to make predictions for test dataset
 
-saveRDS(preds_final, "RF_Preds.Rds")
+saveRDS(preds_final, "RFPreds.Rds")
 
 head(preds_final)
 
@@ -201,8 +201,12 @@ head(pred_frame, 20)
 nrow(pred_frame)
 
 #create prediction file
-write_csv(pred_frame, "rf_fit.csv")
+write_csv(pred_frame, "fit_rf.csv")
 
 
+
+
+
+  
 
 

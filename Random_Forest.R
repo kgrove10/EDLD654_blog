@@ -1,6 +1,6 @@
 #read in data
 library(tidyverse)
-full_train <- read_csv("train.csv",
+full_train <- read_csv("data/train.csv",
                        col_types = cols(.default = col_guess(), 
                                         calc_admn_cd = col_character()))  %>% 
   select(-classification)
@@ -11,8 +11,8 @@ library(rio)
 set.seed(500)
 # import fall membership report data and clean 
 
-sheets <- readxl::excel_sheets("fallmembershipreport_20192020.xlsx")
-ode_schools <- readxl::read_xlsx(here::here("fallmembershipreport_20192020.xlsx"), sheet = sheets[4])
+sheets <- readxl::excel_sheets("data/fallmembershipreport_20192020.xlsx")
+ode_schools <- readxl::read_xlsx(here::here("data/fallmembershipreport_20192020.xlsx"), sheet = sheets[4])
 str(ode_schools)
 
 ethnicities <- ode_schools %>% select(attnd_schl_inst_id = `Attending School ID`,
@@ -84,18 +84,29 @@ stu_counts <- rio::import("https://github.com/datalorax/ach-gap-variability/raw/
 # join frl and stu_counts data
 frl <- left_join(frl, stu_counts)
 
+#save as .csv for use on talapas
+write_csv(frl, "data/frl_stucounts.csv")
+
 # add frl data to train data
 frl_fulltrain <- left_join(full_train, frl)
 
 dim(frl_fulltrain)
 
+getwd()
 #look at relations between variables
-frl_fulltrain %>% 
+#jpeg("VariableRelations.jpg")
+
+var_relate <- frl_fulltrain %>% 
   select(-contains("id"), -ncessch, -missing, -not_applicable) %>% 
   select_if(is.numeric) %>% 
   select(score, everything()) %>% 
   cor(use = "complete.obs") %>% 
   corrplot::corrplot()
+
+#dev.off()
+
+dev.copy(pdf,'plots/VariableRelations.pdf')
+dev.off()
 
 #split data and resample
 

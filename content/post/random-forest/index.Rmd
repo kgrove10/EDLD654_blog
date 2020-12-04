@@ -7,26 +7,45 @@ categories: []
 tags: []
 ---
 
-In this section, we will fit a random forest model to our data. 
+In this post, we will outline how we fit a random forest model to our data. 
 
-### Description of Random Forest Model
+## Description of Random Forest Model
 
-To understand a random forest model, we first have to understand its building blocks, decision trees.  Decision trees can be used for either regression or classification problems (here, we're using them to address a regression problem of predicting student scores). A decision tree is essentially a series of splits in the data, where is split at a series of nodes based on the feature that makes the separated groups to as different as possible from each other (this feature at this first split is called the "root node").  Data from either side of this split are then split again on the next feature that makes that data as different as possible, and so on (so called interior nodes) until you reach some terminal number of observations (the leaf, or terminal node). Thus, given an observation,  you can move through this decision tree based on the features of that observation and the splits to predict some result (regression or classification). 
+**What does the Random Forest Model do?**
 
-A random forest model uses decision trees in aggregate... 
+To understand a random forest model, we first have to understand its building blocks, decision trees.  Decision trees can be used for either regression or classification problems (here, we're using them to address a regression problem of predicting student scores). A decision tree is essentially a series of splits in the data, where is split at a series of nodes based on the feature that makes the separated groups to as different as possible from each other (this feature at this first split is called the "root node").  Data from either side of this split are then split again on the next feature that makes that data as different as possible, and so on (so called interior or internal nodes) until you reach some terminal number of observations (the leaf, or terminal node). Thus, given an observation,  you can move through this decision tree based on the features of that observation and the splits to predict some result (regression or classification). 
 
-A random forest model is a machine learning model that combines many decision trees into one model. What is a decision tree?    (high level explaination of what model is doing and why it is appropriate).
+A random forest model uses these decision trees in aggregate (sometimes called ensemble learning), by combining many decision trees into one model. In essence, this model uses the "wisdom of crowds" notion - while individually, decision trees may not be great predictors, in combination, they are successful. The random forest model is a bagging (bootstrap aggregation) technique, meaning it runs many decision trees in parallel on bootstrapped copies of the training data, and then outputs as the predicted model the mean prediction of each of these individual trees. However, one major benefit of the the random forest model is that it also utilizes split-variable randomization to reduce correlation between trees. For each of the constitutive decision trees in a random forest, at each split, only a random sample of the features/predictors are available to utilize. This means that if you have a (or a couple) strong predictor(s) in the dataset, when using decision trees alone, you're likely to see the (especially initial) splits dominated by these strong predictors. When using random forests, since these strong predictors won't always be present in the randomly selected subset of the predictors utilized by the constitutive decision trees, splits are made on other predictors as well, not just the most dominant ones, and thus the decision trees are less correlated with each other as compared to bagged trees, which increases the reliability of their aggregate result. (see also [Chakure, 2019](https://medium.com/swlh/random-forest-and-its-implementation-71824ced454f), [Yiu, 2019](https://towardsdatascience.com/understanding-random-forest-58381e0602d2)).
 
-We selected this model because (explain)
+**Hyperparameters to be optimized**
 
-This model makes the following assumptions (list).
+The random forest model has three hyperparameters to be tuned, ... 
 
-We will evaluate the performance of this model using... (list).
+• Tend to provide very good performance out-of-the-box
+• default values of tuning parameters tend to produce good result
+• when tuning, have the least variability in prediction accuracy among machine learning algorithms (Probst, Bischl, & Boulesteix, 2018)
+
+**Why did we select this model?**
+
+We selected this model as one of our 3 fits because we wanted to explore several models that utilize decision trees. Regression using decision trees in general does a good job of capturing non-linear features in the data as compared to simpler linear regression. Additionally, random forest models (along with boosted tree models, which we also examine), generally have pretty good out of the box perfomance, and we thought it would be interesting to compare their performances when tuned. 
+
+When are decision trees appropriate??
+
+**Model Assumptions**
+
+Because the random forest model is built out of decision trees, it inherits their assumptions, which are fairly simple. Because decision trees function to split the data, they have no probabilistic model, and therefore we do not need to make any assumptions about the underlying data distribution. Random forest models rely upon bootstrap aggregation (bagging), which also does not make any assumptions about the underlying data distribution, but does rely upon the assumption that the data was collected in such a manner that the sampling was representative, meaning there was no systematic bias in the sample collection, and the characteristics of the sample acurately represent that of the larger group, both in presence, and in proportion represented ([Chatterjee, 2019](https://towardsdatascience.com/all-the-annoying-assumptions-31b55df246c3))
+
+We will evaluate the performance of this model after training by applying it to our held out test split from the training data (also called the validation set). We will examine rmse (root mean squared error, the standard deviation of the residuals), rsq (R-squared, the proportion of variance in the dependent variable explained by the variables in our regression model), and huber-loss (a loss function that represents absolute error, and is less sensitive to outliers than the mse and rmse), but largely rely upon the rmse as our single evaluator of the performance of this and the other tree models we present in this blog in order to select our final model.  
 
 
 ### Fitting our Random Forest Model
 
-Model Fitting Procedures
+**Model Fitting Procedures** 
+
+To fit our random forest model, we first imported and split the data, as described [here](https://edld654finalproject.netlify.app/2020/11/30/data-description/). The model fit was completed using the University of Oregon's "Talapas" Supercomputer, so while some example code will be included with this post, computations were conducted elsewhere, and the full code can be found on our [GitHub](. 
+
+
+**Model Fitting Results**
 
 Results of our model evaluation
 
