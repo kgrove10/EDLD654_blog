@@ -12,27 +12,308 @@ tags: []
 
 
 <p>In this post, we will outline how we fit a random forest model to our data.</p>
-<div id="description-of-random-forest-model" class="section level2">
-<h2>Description of Random Forest Model</h2>
+<div id="random-forest-model-description" class="section level2">
+<h2>Random Forest Model Description</h2>
 <p><strong>What does the Random Forest Model do?</strong></p>
 <p>To understand a random forest model, we first have to understand its building blocks, decision trees. Decision trees can be used for either regression or classification problems (here, we’re using them to address a regression problem of predicting student scores). A decision tree is essentially a series of splits in the data, where is split at a series of nodes based on the feature that makes the separated groups to as different as possible from each other (this feature at this first split is called the “root node”). Data from either side of this split are then split again on the next feature that makes that data as different as possible, and so on (so called interior or internal nodes) until you reach some terminal number of observations (the leaf, or terminal node). Thus, given an observation, you can move through this decision tree based on the features of that observation and the splits to predict some result (regression or classification).</p>
-<p>A random forest model uses these decision trees in aggregate (sometimes called ensemble learning), by combining many decision trees into one model. In essence, this model uses the “wisdom of crowds” notion - while individually, decision trees may not be great predictors, in combination, they are successful. The random forest model is a bagging (bootstrap aggregation) technique, meaning it runs many decision trees in parallel on bootstrapped copies of the training data, and then outputs as the predicted model the mean prediction of each of these individual trees. However, one major benefit of the the random forest model is that it also utilizes split-variable randomization to reduce correlation between trees. For each of the constitutive decision trees in a random forest, at each split, only a random sample of the features/predictors are available to utilize. This means that if you have a (or a couple) strong predictor(s) in the dataset, when using decision trees alone, you’re likely to see the (especially initial) splits dominated by these strong predictors. When using random forests, since these strong predictors won’t always be present in the randomly selected subset of the predictors utilized by the constitutive decision trees, splits are made on other predictors as well, not just the most dominant ones, and thus the decision trees are less correlated with each other as compared to bagged trees, which increases the reliability of their aggregate result. (see also <a href="https://medium.com/swlh/random-forest-and-its-implementation-71824ced454f">Chakure, 2019</a>, <a href="https://towardsdatascience.com/understanding-random-forest-58381e0602d2">Yiu, 2019</a>).</p>
+<p>A random forest model uses these decision trees in aggregate (sometimes called ensemble learning), by combining many decision trees into one model. In essence, this model uses the “wisdom of crowds” notion - while individually, decision trees may not be great predictors, in combination, they are successful. The random forest model is a bagging (bootstrap aggregation) technique, meaning it runs many decision trees in parallel on bootstrapped copies of the training data, and then outputs as the predicted model the mean prediction of each of these individual trees. However, one major benefit of the the random forest model is that it also utilizes <em>split-variable randomization</em> to reduce correlation between trees. For each of the constitutive decision trees in a random forest, at each split, only a random sample of the features/predictors are available to utilize. This means that if you have a (or a couple) strong predictor(s) in the dataset, when using decision trees alone, you’re likely to see the (especially initial) splits dominated by these strong predictors. When using random forests, since these strong predictors won’t always be present in the randomly selected subset of the predictors utilized by the constitutive decision trees, splits are made on other predictors as well, not just the most dominant ones, and thus the decision trees are less correlated with each other as compared to bagged trees, which increases the reliability of their aggregate result. (see also <a href="https://medium.com/swlh/random-forest-and-its-implementation-71824ced454f">Chakure, 2019</a>, <a href="https://towardsdatascience.com/understanding-random-forest-58381e0602d2">Yiu, 2019</a>).</p>
 <p><strong>Hyperparameters to be optimized</strong></p>
-<p>The random forest model has three hyperparameters to be tuned, …</p>
-<p>• Tend to provide very good performance out-of-the-box
-• default values of tuning parameters tend to produce good result
-• when tuning, have the least variability in prediction accuracy among machine learning algorithms (Probst, Bischl, &amp; Boulesteix, 2018)</p>
+<p>The random forest model provides very good “out-of-the-box” performance, meaning that its default hyperparameter values tend to produce good results. That said, there are hyperparameters that can be tuned in the random forest model. We will tune three of them, <code>mtry</code>, <code>trees</code> and <code>min_n</code>:</p>
+<ul>
+<li><code>mtry</code> represents the number of predictors that will be sampled randomly at each split when creating the constitutive decision trees.</li>
+<li><code>trees</code> represents the number of individual decision trees to be created and then aggregated across.</li>
+<li><code>min_n</code> represents the minimum number of data points present in a node to terminate that node - essentially, how specific should we get? How many data points should be present in a terminal node (or leaf) when we cease splitting our data?</li>
+</ul>
+<p>Other hyperparameters we did not tune but that could be tuned for random forest models include the sampling (sapling? :) ) scheme (the default is bootstrapping, where observations are tuned with replacement) and the split rule (the default is the split that maximizes the Gini impurity).</p>
 <p><strong>Why did we select this model?</strong></p>
 <p>We selected this model as one of our 3 fits because we wanted to explore several models that utilize decision trees. Regression using decision trees in general does a good job of capturing non-linear features in the data as compared to simpler linear regression. Additionally, random forest models (along with boosted tree models, which we also examine), generally have pretty good out of the box perfomance, and we thought it would be interesting to compare their performances when tuned.</p>
-<p>When are decision trees appropriate??</p>
-<p><strong>Model Assumptions</strong></p>
+<p>When is it appropriate to use random forest models? As outlined above and below, random forest models are generally a fairly solid choice, because they don’t make any assumptions about the underlying distribution of the data. The are also less influenced by outliers than other models (because they are built on averaged decision trees, so extreme values don’t impact the entire model), and aren’t as vulnerable to multi-collinearity, since a split on either of these highly correlated features would essentially use up the information (predictive power) that would be provided by the other highly correlated feature. However, this can also be an issue with random forest models. Because one of the multicollinear variables is used for a split whilst the other is not, it could erroniously appear that one of these highly correlated variables is much more important than the other, when in fact they are very close in their predictive power for the dependent variable. While this effect is mitigated somewhat by the use of split-variable randomization, it is not completely eliminated (<a href="http://blog.datadive.net/selecting-good-features-part-iii-random-forests/">Saabas, 2014</a>). In general, one area of concern with random forest models is their difficulty of interpretation in terms of the individual impact of features on the dependent variable. In this case, we’re more interested in our ability to successfully and accurately predict student scores than understanding the individual feature contribution to these scores, so the random forest model is a good choice, especially in conjunction with the bagged and boosted tree model as our goal here is to compare their performance.</p>
+<p><strong>Random Forest Model Assumptions</strong></p>
 <p>Because the random forest model is built out of decision trees, it inherits their assumptions, which are fairly simple. Because decision trees function to split the data, they have no probabilistic model, and therefore we do not need to make any assumptions about the underlying data distribution. Random forest models rely upon bootstrap aggregation (bagging), which also does not make any assumptions about the underlying data distribution, but does rely upon the assumption that the data was collected in such a manner that the sampling was representative, meaning there was no systematic bias in the sample collection, and the characteristics of the sample acurately represent that of the larger group, both in presence, and in proportion represented (<a href="https://towardsdatascience.com/all-the-annoying-assumptions-31b55df246c3">Chatterjee, 2019</a>)</p>
-<p>We will evaluate the performance of this model after training by applying it to our held out test split from the training data (also called the validation set). We will examine rmse (root mean squared error, the standard deviation of the residuals), rsq (R-squared, the proportion of variance in the dependent variable explained by the variables in our regression model), and huber-loss (a loss function that represents absolute error, and is less sensitive to outliers than the mse and rmse), but largely rely upon the rmse as our single evaluator of the performance of this and the other tree models we present in this blog in order to select our final model.</p>
-<div id="fitting-our-random-forest-model" class="section level3">
-<h3>Fitting our Random Forest Model</h3>
+<p><strong>Model Performance Evaluation</strong></p>
+<p>We will evaluate the performance of this model after training by applying it to our held out test split from the training data (also called the validation set). We will examine rmse (appropriately, the <em>root</em> mean squared error, the standard deviation of the residuals), rsq (R-squared, the proportion of variance in the dependent variable explained by the variables in our regression model), and huber-loss (a loss function that represents absolute error, and is less sensitive to outliers than the mse and rmse), but largely rely upon the rmse as our single evaluator of the performance of this and the other tree models we present in this blog in order to select our final model.</p>
+</div>
+<div id="fitting-our-random-forest-model" class="section level2">
+<h2>Fitting our Random Forest Model</h2>
 <p><strong>Model Fitting Procedures</strong></p>
-<p>To fit our random forest model, we first imported and split the data, as described <a href="https://edld654finalproject.netlify.app/2020/11/30/data-description/">here</a>. The model fit was completed using the University of Oregon’s “Talapas” Supercomputer, so while some example code will be included with this post, computations were conducted elsewhere, and the full code can be found on our [GitHub](.</p>
+<p>To fit our random forest model, we first imported and split the data, and applied our recipe, as described <a href="https://edld654finalproject.netlify.app/2020/11/30/data-description/">here</a>. The model fit was completed using the University of Oregon’s “Talapas” Supercomputer, so while some example code will be included with this post, computations were conducted elsewhere, and the full code can be found on our <a href="https://github.com/kgrove10/EDLD654_blog/blob/main/static/random_forest_model/RF_Talapas.R">GitHub here</a>.</p>
+<p>First, we started by coding a random forest model. For this, we utilized the function <code>rand_forest()</code> from the <code>parsnip</code> package. In this code, we set our engine to <code>&quot;ranger&quot;</code>, which offers fast implementation of random forests. Since it supports both classification and regression, we need to specify regression in the piped function <code>set_mode()</code>. While setting our engine, we also specify several arguments from ranger, including the number of threads, or the number of distinct processes running in parallel. In this case, we set it equal to the number of cores, so each core is exceuting one thing independently. If running locally, we could run <code>parallel::detectCores()</code>, but since we’re running this code on talapas, we manually set it to the number of cores talapas posesses, 8. The argument <code>importance = &quot;permutation&quot;</code> is set to specify the variable importance mode. The default is <code>impurity</code> which is the Gini index, or the probability of a variable being wrongly classified when it is randomly chosen, but we set it here to be <code>permutation</code> instead. The issue with impurity-based feature importance is that it can inflate the importance of numeric features over categorical features. Since we have both in our model, we chose to use <code>permutation</code>, which is more reliable that impurity, because it instead calculates the importance of a feature based on the increase in the model’s prediction error after permuting the feature. The downside of permutation is that it is more computationally demanding, and potentially biased toward collinear predictors.</p>
+<pre class="r"><code>cores &lt;- 8
+
+rf_def_mod &lt;- rand_forest() %&gt;%
+  set_engine(&quot;ranger&quot;,
+             num.threads = cores,
+             importance = &quot;permutation&quot;,
+             verbose = TRUE) %&gt;%
+  set_mode(&quot;regression&quot;)</code></pre>
+<p>Next, we wanted to tune three hyperparameters utilized in our random forest model, <code>mtry</code>, <code>trees</code> and <code>min_n</code> (described in detail above), so we set these hyperparameters to be tuned.</p>
+<pre class="r"><code>rf_tune_mod &lt;- rf_def_mod %&gt;%
+  set_args(
+    mtry = tune(),
+    trees = tune(),
+    min_n = tune()
+  )
+
+translate(rf_tune_mod)</code></pre>
+<p>We also translated our tuning model, which gives us a more interpretable printout of the settings we have established for our tuning model, which looks like this:</p>
+<pre><code>Random Forest Model Specification (regression)
+
+Main Arguments:
+  mtry = tune()
+  trees = tune()
+  min_n = tune()
+
+Engine-Specific Arguments:
+  num.threads = cores
+  importance = permutation
+  verbose = TRUE
+
+Computational engine: ranger 
+
+Model fit template:
+ranger::ranger(formula = missing_arg(), data = missing_arg(), 
+    case.weights = missing_arg(), mtry = tune(), num.trees = tune(), 
+    min.node.size = tune(), num.threads = cores, importance = &quot;permutation&quot;, 
+    verbose = TRUE, seed = sample.int(10^5, 1))</code></pre>
+<p>Next, we created a workflow, which is an object that can bundle together pre-processing modeling, and post-processing requests. In this case, we are combining our recipe with our parsnip model specification, so that we can then prepare the recipe and fit the model using a single step, calling <code>fit()</code>. We also specify the three metrics we will evaluate our tuned models on, <code>rmse</code>, <code>rsq</code> and <code>huber_loss</code> (described above) using the <code>metric_set()</code> function.</p>
+<pre class="r"><code>rf_tune_wflow &lt;- workflow() %&gt;%
+  add_recipe(rec) %&gt;%
+  add_model(rf_tune_mod)
+
+metrics_eval &lt;- metric_set(rmse, 
+                           rsq, 
+                           huber_loss)</code></pre>
+<p>We then fit the tuning model, using the argument <code>tune_grid()</code>. Here, we are using a space-filling design of 20 values for each of our three tuning parameters, which we specify using the workflow object we created above. We also set <code>extract</code> to extract our ranger model for every fold.</p>
+<pre class="r"><code>rf_tune_res &lt;- tune_grid(
+  rf_tune_wflow,
+  train_cv,
+  tune = 20,
+  metrics = metrics_eval, #from above - metrics of rmse, rsq, huber_loss
+  control = control_resamples(verbose = TRUE,
+                              save_pred = TRUE,
+                              extract = function(x) extract_model(x)))</code></pre>
+<p>Once this runs (it took about 2.5 hours on talapas), we can collect the metrics from our model. The code below gathers the best 5 models based on <code>rsq</code>, <code>rmse</code>, and <code>huber_loss</code> (note that “best” for rmse and huber loss is lower values, while “best” for rsq is higher values, and thus we reverse the order before slicing the top values for rmse). We then bind these values together and save them as a .csv so I can include the results in this blog post.</p>
+<pre class="r"><code>rf_tune_met &lt;- rf_tune_res %&gt;%
+  collect_metrics() 
+
+rf_tune_rsq &lt;- rf_tune_met %&gt;%
+  filter(.metric == &quot;rsq&quot;) %&gt;%
+  arrange(.metric, desc(mean)) %&gt;%
+  slice(1:5)
+
+rf_tune_rmse &lt;- rf_tune_met %&gt;%
+  filter(.metric == &quot;rmse&quot;) %&gt;%
+  arrange(.metric, mean) %&gt;%
+  slice(1:5)
+
+rf_tune_hl &lt;- rf_tune_met %&gt;%
+  filter(.metric == &quot;huber_loss&quot;) %&gt;%
+  arrange(.metric, mean) %&gt;%
+  slice(1:5)
+
+rf_tune_metrics &lt;- rbind(rf_tune_rsq, rf_tune_rmse, rf_tune_hl) 
+
+rf_tune_metrics %&gt;%
+  write.csv(&quot;./RFTuneMetrics.csv&quot;, row.names = FALSE)</code></pre>
+<p>The “top” model results for our tuned random forest model are below:</p>
+<table>
+<thead>
+<tr class="header">
+<th align="right">mtry</th>
+<th align="right">trees</th>
+<th align="right">min_n</th>
+<th align="left">.metric</th>
+<th align="left">.estimator</th>
+<th align="right">mean</th>
+<th align="right">n</th>
+<th align="right">std_err</th>
+<th align="left">.config</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="right">5</td>
+<td align="right">1323</td>
+<td align="right">38</td>
+<td align="left">rsq</td>
+<td align="left">standard</td>
+<td align="right">0.4527480</td>
+<td align="right">10</td>
+<td align="right">0.0019274</td>
+<td align="left">Model01</td>
+</tr>
+<tr class="even">
+<td align="right">8</td>
+<td align="right">121</td>
+<td align="right">32</td>
+<td align="left">rsq</td>
+<td align="left">standard</td>
+<td align="right">0.4479610</td>
+<td align="right">10</td>
+<td align="right">0.0019293</td>
+<td align="left">Model09</td>
+</tr>
+<tr class="odd">
+<td align="right">11</td>
+<td align="right">515</td>
+<td align="right">20</td>
+<td align="left">rsq</td>
+<td align="left">standard</td>
+<td align="right">0.4407932</td>
+<td align="right">10</td>
+<td align="right">0.0019996</td>
+<td align="left">Model06</td>
+</tr>
+<tr class="even">
+<td align="right">22</td>
+<td align="right">763</td>
+<td align="right">28</td>
+<td align="left">rsq</td>
+<td align="left">standard</td>
+<td align="right">0.4404702</td>
+<td align="right">10</td>
+<td align="right">0.0019379</td>
+<td align="left">Model04</td>
+</tr>
+<tr class="odd">
+<td align="right">19</td>
+<td align="right">1995</td>
+<td align="right">23</td>
+<td align="left">rsq</td>
+<td align="left">standard</td>
+<td align="right">0.4386040</td>
+<td align="right">10</td>
+<td align="right">0.0019616</td>
+<td align="left">Model10</td>
+</tr>
+<tr class="even">
+<td align="right">5</td>
+<td align="right">1323</td>
+<td align="right">38</td>
+<td align="left">rmse</td>
+<td align="left">standard</td>
+<td align="right">85.6468484</td>
+<td align="right">10</td>
+<td align="right">0.2770141</td>
+<td align="left">Model01</td>
+</tr>
+<tr class="odd">
+<td align="right">8</td>
+<td align="right">121</td>
+<td align="right">32</td>
+<td align="left">rmse</td>
+<td align="left">standard</td>
+<td align="right">86.0596932</td>
+<td align="right">10</td>
+<td align="right">0.2698281</td>
+<td align="left">Model09</td>
+</tr>
+<tr class="even">
+<td align="right">11</td>
+<td align="right">515</td>
+<td align="right">20</td>
+<td align="left">rmse</td>
+<td align="left">standard</td>
+<td align="right">86.7318734</td>
+<td align="right">10</td>
+<td align="right">0.2690451</td>
+<td align="left">Model06</td>
+</tr>
+<tr class="odd">
+<td align="right">22</td>
+<td align="right">763</td>
+<td align="right">28</td>
+<td align="left">rmse</td>
+<td align="left">standard</td>
+<td align="right">86.7599839</td>
+<td align="right">10</td>
+<td align="right">0.2630774</td>
+<td align="left">Model04</td>
+</tr>
+<tr class="even">
+<td align="right">19</td>
+<td align="right">1995</td>
+<td align="right">23</td>
+<td align="left">rmse</td>
+<td align="left">standard</td>
+<td align="right">86.9396774</td>
+<td align="right">10</td>
+<td align="right">0.2637806</td>
+<td align="left">Model10</td>
+</tr>
+<tr class="odd">
+<td align="right">5</td>
+<td align="right">1323</td>
+<td align="right">38</td>
+<td align="left">huber_loss</td>
+<td align="left">standard</td>
+<td align="right">65.5569131</td>
+<td align="right">10</td>
+<td align="right">0.1734134</td>
+<td align="left">Model01</td>
+</tr>
+<tr class="even">
+<td align="right">8</td>
+<td align="right">121</td>
+<td align="right">32</td>
+<td align="left">huber_loss</td>
+<td align="left">standard</td>
+<td align="right">65.8714595</td>
+<td align="right">10</td>
+<td align="right">0.1755689</td>
+<td align="left">Model09</td>
+</tr>
+<tr class="odd">
+<td align="right">11</td>
+<td align="right">515</td>
+<td align="right">20</td>
+<td align="left">huber_loss</td>
+<td align="left">standard</td>
+<td align="right">66.4010790</td>
+<td align="right">10</td>
+<td align="right">0.1780117</td>
+<td align="left">Model06</td>
+</tr>
+<tr class="even">
+<td align="right">22</td>
+<td align="right">763</td>
+<td align="right">28</td>
+<td align="left">huber_loss</td>
+<td align="left">standard</td>
+<td align="right">66.4037248</td>
+<td align="right">10</td>
+<td align="right">0.1740077</td>
+<td align="left">Model04</td>
+</tr>
+<tr class="odd">
+<td align="right">19</td>
+<td align="right">1995</td>
+<td align="right">23</td>
+<td align="left">huber_loss</td>
+<td align="left">standard</td>
+<td align="right">66.5486428</td>
+<td align="right">10</td>
+<td align="right">0.1746780</td>
+<td align="left">Model10</td>
+</tr>
+</tbody>
+</table>
+<p>We can also visualize these results using the following code to generate a plot of the tuned metrics (and save it to include in this blog):</p>
+<pre class="r"><code>rf_tune_res %&gt;%
+  autoplot() +
+  geom_line()
+
+ggsave(&quot;RFTunedMetrics.pdf&quot;,
+       plot = last_plot(),
+       scale = 1)</code></pre>
+<div class="figure">
+<embed src="./static/random_forest_model/RFTunedMetrics.pdf" style="width:100.0%" height="400" />
+<p class="caption">Image Title</p>
+</div>
+<div class="figure">
+<embed src="/random-forest/index_files/RFTunedMetrics.pdf" />
+<p class="caption">tuned metric plot</p>
+</div>
 <p><strong>Model Fitting Results</strong></p>
 <p>Results of our model evaluation</p>
-</div>
 </div>

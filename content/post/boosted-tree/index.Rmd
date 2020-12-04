@@ -1,0 +1,40 @@
+---
+title: Boosted Tree
+author: ''
+date: '2020-12-03'
+slug: boosted-tree
+categories: []
+tags: []
+---
+
+In this post, we will outline how we fit a boosted tree model to our data. 
+
+## Boosted Tree Model Description
+
+**What does the Boosted Tree Model do?**
+
+
+**Hyperparameters to be optimized**
+
+
+
+**Why did we select this model?**
+
+
+
+**Boosted Tree Model Assumptions**
+
+
+**Model Performance Evaluation**
+
+
+## Fitting our Boosted Tree Model
+
+**Model Fitting Procedures** 
+
+
+
+
+**Model Fitting Results**
+
+
