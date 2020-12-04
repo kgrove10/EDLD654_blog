@@ -18,6 +18,8 @@ This post describes the data we utilized to fit our three models:
 - If missing data are present, discuss how these values were handled, variable transformations, etc. 
 - Use this section to explain your data splitting process for model evaluation.
 
+**include variable relation post in here!!**
+
 
 ```{r}
 
