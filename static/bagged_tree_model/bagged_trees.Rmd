@@ -209,7 +209,7 @@ The final step here is to creat a workflow. A workflow combines all the elements
 
 #Bagged trees
 
-A bagged tree approach creates multiple subsets of data from the training set which are randomly chosen with replacement. Each subset of data is used to train a given decision tree. In the end, we have an ensemble of different models. The predictions from all the different trees are averaged together, giving us a stronger prediction than one tree could independently.
+Bagged trees, however, are just a special case of random forests where there is no sampling of columns when each tree is built. A bagged tree approach creates multiple subsets of data from the training set which are randomly chosen with replacement. Each subset of data is used to train a given decision tree. In the end, we have an ensemble of different models. The predictions from all the different trees are averaged together, giving us a stronger prediction than one tree could independently.
 
 ```{r}
 set.seed(500)
