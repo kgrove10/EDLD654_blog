@@ -198,7 +198,7 @@ rf_wf_final <- finalize_workflow(
 
 Now, our workflow looks like this:
 
-Random Forest Model Specification (regression)
+    Random Forest Model Specification (regression)
     
     Main Arguments:
       mtry = 5
