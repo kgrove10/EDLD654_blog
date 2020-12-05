@@ -112,10 +112,12 @@ plan(sequential)
 ```{r eval=FALSE}
 ggplot(aucs, aes(b, mean)) +
   geom_line() +
-  geom_point() 
+  geom_point()  
 ```
 
-![RMSE plot](https://www.dropbox.com/s/snu676nlu1014yi/rmse_auc.png?dl=0)
+```{r echo = FALSE}
+blogdown::shortcode("figure", src ='"/plots/rmse_auc.png"', alt = "RMSE AUC")
+```
 
 We see from the plot above that setting $b$ to 175 would be the optiomal number of trees. 
 
