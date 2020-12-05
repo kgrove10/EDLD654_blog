@@ -1,7 +1,7 @@
 ---
 title: Bagged Tree
 author: Ouafaa Hmaddi
-date: '2020-12-03'
+date: '2020-12-01'
 slug: bagged-tree
 categories: []
 tags: []
