@@ -16,7 +16,7 @@ tags: []
 <div id="intro-to-the-data" class="section level2">
 <h2>Intro to the Data</h2>
 <p>The main data we are using for this project, (<code>train.csv</code> and <code>test.csv</code>) come from an annual test students across the country take between grades 3-8 in reading and math. The 198,426 data points we utilize here come specifically from the state of Oregon, and is simulated rather than actual data, although the distribution of this simulated data is very similar to that of the real data. This data can be accessed from our <a href="https://github.com/kgrove10/EDLD654_blog/tree/main/static/data">GitHub</a> or from the <a href="https://www.kaggle.com/c/edld-654-fall-2020/data">Kaggle competition</a> for this course.</p>
-<p>We also joined a couple additional data sets to this data that we think could help improve the predictive ability of our models by describing more about the schools in which individual students are enrolled. The first, <code>fallmembershipreport_20192020.xlsx</code> is a student enrollment report that provides information about the K-12 students who are enrolled on the first day of October of each year (this data is for the 2019-2020 school year, from October 1st, 2019). It can be accessed from the <a href="https://www.oregon.gov/ode/reports-and-data/students/Pages/Student-Enrollment-Reports.aspx">Oregon Department of Education Website</a>. The students included in this sample include all students enrolled in public schools and programs (including regular, alternative, charter, and other types of schools and programs). The report also includes students attending private schools if the student was placed there by a private entity or financed with public funds. No student is double-listed, that is, no student is enrolled in more than one school or district. Next, we join data from the <a href="https://nces.ed.gov/ccd/files.asp#Fiscal:2,LevelId:7,SchoolYearId:32,Page:1">National Center for Educational Statistics (NCES)</a> which provides the number of students by school who are eligible for various free or reduced lunch programs. We will filter this data for just those students from Oregon. We join this data with <a href="https://raw.githubusercontent.com/datalorax/ach-gap-variability/master/data/achievement-gaps-geocoded.csv">data on student counts</a>, or the number of students in each school across grades.</p>
+<p>We also joined a couple additional data sets to this data that we think could help improve the predictive ability of our models by describing more about the schools in which individual students are enrolled. The first, <code>fallmembershipreport_20192020.xlsx</code> is a student enrollment report that provides information about the K-12 students who are enrolled on the first day of October of each year (this data is for the 2019-2020 school year). It can be accessed from the <a href="https://www.oregon.gov/ode/reports-and-data/students/Pages/Student-Enrollment-Reports.aspx">Oregon Department of Education Website</a>. The students included in this sample include all students enrolled in public schools and programs (including regular, alternative, charter, and other types of schools and programs). The report also includes students attending private schools if the student was placed there by a private entity or financed with public funds. No student is double-listed, that is, no student is enrolled in more than one school or district. Next, we join data from the <a href="https://nces.ed.gov/ccd/files.asp#Fiscal:2,LevelId:7,SchoolYearId:32,Page:1">National Center for Educational Statistics (NCES)</a> which provides the number of students by school who are eligible for various free or reduced lunch programs. We will filter this data for just those students from Oregon. We join this data with <a href="https://raw.githubusercontent.com/datalorax/ach-gap-variability/master/data/achievement-gaps-geocoded.csv">data on student counts</a>.</p>
 <p>Example code to read in and join this data is as follows. Because of the size of this data and in the interest of not exhausting the vector memory of this blogdown site, we will present example code and output below without actually evaluating it. Reproducible code and output for each of our models can be found on our <a href="https://github.com/kgrove10/EDLD654_blog/tree/main/static">GitHub</a> under each of the three model folders.</p>
 </div>
 <div id="getting-started-loading-and-cleaning-the-data" class="section level2">
@@ -107,7 +107,432 @@ full_train &lt;- left_join(full_train, ethnicities)
 frl_fulltrain &lt;- left_join(full_train, frl)</code></pre>
 <p>Now our three datasets are all loaded, cleaned, and joined together to make one cohesive data set we will use for all three of our tree-based models. Before we move on to preparing the data for modeling, let’s explore and describe the variables present in our joined data set, <code>frl_fulltrain</code>.</p>
 <p>Each row of our data corresponds to an individual student observation. However, the data contained in each row includes both student-level variables, such as the student’s grade, gender, ethnicity, and enrollment in various programs, as well as school-level and district-level data, such as school ethnicity proportions and the proportion of students who qualify for free or reduced lunch programs. A detailed data dictionary for the initial <code>train.csv</code> data can be found <a href="">here</a>, but we will attmpet to provide a brief description and overview of the 52 variables present in our <code>frl_fulltrain</code> data each of our three tree-based models will rely upon.</p>
-<p><strong>VARIABLE DESCRIPTION TO BE ADDED HERE</strong></p>
+<p>Overall, our data consists of 17 numeric variables, 6 id variables, 1 date variable, and 28 categorical variables.</p>
+<p>Our 6 id variables are:</p>
+<ul>
+<li><code>id</code> which identifies a single student,</li>
+<li><code>attnd_dist_inst_id</code> and <code>attnd_schl_inst_id</code> which represent the district and school, respectively where the student is enrolled</li>
+<li><code>partic_dist_inst_id</code> and <code>partic_schl_inst_id</code> which represent the district and school, respectively, where the student was enrolled as of the first school day in May.</li>
+<li><code>ncessch</code> which is the NCES school identifier</li>
+</ul>
+<p>Our date variable, <code>tst_dt</code> gives the date the test was taken, in mm/dd/yyy format.</p>
+<p>The summary statistics, including minimum and maximum, median, mean, and number of missing values are presented below for each of our 17 numeric variables, including our outcome variable, <code>score</code>, which is the student’s overall test score. Our numeric predictor variables also the grade the student is enrolled in (<code>enrl_grd</code>), the school’s latitude and longitude (<code>lat</code> and <code>lon</code>), the ethnic makeup of the school by proportion (<code>p_american_indian_alaska_native</code>, <code>p_asian</code>, <code>p_native_hawaiian_pacific_islander</code>, <code>p_black_african_american</code>, <code>p_hispanic_latino</code>, <code>p_white</code>, and <code>p_multiracial</code>), the proportion of students in the school eligible for free and reduced price lunch (<code>free_lunch_qualified</code> and <code>reduced_price_lunch_qualified</code>) as well as other data related to this free/reduced lunch data, including the number of observations missing or not applicable (<code>missing</code>, <code>not_applicable</code>), and <code>no_category_codes</code> representing categories not specified in the subtotal/total, and the student count across grades for each school, <code>n</code>.</p>
+<table>
+<thead>
+<tr class="header">
+<th align="left"></th>
+<th align="left">datadesc (N = 189,426)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left"><strong>enrl_grd</strong></td>
+<td align="left">  </td>
+</tr>
+<tr class="even">
+<td align="left">   minimum</td>
+<td align="left">3</td>
+</tr>
+<tr class="odd">
+<td align="left">   median (IQR)</td>
+<td align="left">5.00 (4.00, 7.00)</td>
+</tr>
+<tr class="even">
+<td align="left">   mean (sd)</td>
+<td align="left">5.46 ± 1.69</td>
+</tr>
+<tr class="odd">
+<td align="left">   maximum</td>
+<td align="left">8</td>
+</tr>
+<tr class="even">
+<td align="left"><strong>score</strong></td>
+<td align="left">  </td>
+</tr>
+<tr class="odd">
+<td align="left">   minimum</td>
+<td align="left">1,601</td>
+</tr>
+<tr class="even">
+<td align="left">   median (IQR)</td>
+<td align="left">2,498.00 (2,421.00, 2,576.00)</td>
+</tr>
+<tr class="odd">
+<td align="left">   mean (sd)</td>
+<td align="left">2,498.99 ± 115.83</td>
+</tr>
+<tr class="even">
+<td align="left">   maximum</td>
+<td align="left">3,550</td>
+</tr>
+<tr class="odd">
+<td align="left"><strong>lat</strong></td>
+<td align="left">  </td>
+</tr>
+<tr class="even">
+<td align="left">   minimum</td>
+<td align="left">42.01</td>
+</tr>
+<tr class="odd">
+<td align="left">   median (IQR)</td>
+<td align="left">45.25 (44.17, 45.50)</td>
+</tr>
+<tr class="even">
+<td align="left">   mean (sd)</td>
+<td align="left">44.77 ± 1.02</td>
+</tr>
+<tr class="odd">
+<td align="left">   maximum</td>
+<td align="left">46.18</td>
+</tr>
+<tr class="even">
+<td align="left">   Unknown</td>
+<td align="left">3,400/189,426 (2)</td>
+</tr>
+<tr class="odd">
+<td align="left"><strong>lon</strong></td>
+<td align="left">  </td>
+</tr>
+<tr class="even">
+<td align="left">   minimum</td>
+<td align="left">-124.50</td>
+</tr>
+<tr class="odd">
+<td align="left">   median (IQR)</td>
+<td align="left">-122.82 (-123.04, -122.54)</td>
+</tr>
+<tr class="even">
+<td align="left">   mean (sd)</td>
+<td align="left">-122.52 ± 1.19</td>
+</tr>
+<tr class="odd">
+<td align="left">   maximum</td>
+<td align="left">-116.94</td>
+</tr>
+<tr class="even">
+<td align="left">   Unknown</td>
+<td align="left">3,400/189,426 (2)</td>
+</tr>
+<tr class="odd">
+<td align="left"><strong>p_american_indian_alaska_native</strong></td>
+<td align="left">  </td>
+</tr>
+<tr class="even">
+<td align="left">   minimum</td>
+<td align="left">0.00</td>
+</tr>
+<tr class="odd">
+<td align="left">   median (IQR)</td>
+<td align="left">0.01 (0.00, 0.01)</td>
+</tr>
+<tr class="even">
+<td align="left">   mean (sd)</td>
+<td align="left">0.01 ± 0.04</td>
+</tr>
+<tr class="odd">
+<td align="left">   maximum</td>
+<td align="left">0.88</td>
+</tr>
+<tr class="even">
+<td align="left">   Unknown</td>
+<td align="left">154/189,426 (0)</td>
+</tr>
+<tr class="odd">
+<td align="left"><strong>p_asian</strong></td>
+<td align="left">  </td>
+</tr>
+<tr class="even">
+<td align="left">   minimum</td>
+<td align="left">0.00</td>
+</tr>
+<tr class="odd">
+<td align="left">   median (IQR)</td>
+<td align="left">0.01 (0.01, 0.04)</td>
+</tr>
+<tr class="even">
+<td align="left">   mean (sd)</td>
+<td align="left">0.04 ± 0.07</td>
+</tr>
+<tr class="odd">
+<td align="left">   maximum</td>
+<td align="left">0.62</td>
+</tr>
+<tr class="even">
+<td align="left">   Unknown</td>
+<td align="left">154/189,426 (0)</td>
+</tr>
+<tr class="odd">
+<td align="left"><strong>p_native_hawaiian_pacific_islander</strong></td>
+<td align="left">  </td>
+</tr>
+<tr class="even">
+<td align="left">   minimum</td>
+<td align="left">0.00</td>
+</tr>
+<tr class="odd">
+<td align="left">   median (IQR)</td>
+<td align="left">0.00 (0.00, 0.01)</td>
+</tr>
+<tr class="even">
+<td align="left">   mean (sd)</td>
+<td align="left">0.01 ± 0.01</td>
+</tr>
+<tr class="odd">
+<td align="left">   maximum</td>
+<td align="left">0.33</td>
+</tr>
+<tr class="even">
+<td align="left">   Unknown</td>
+<td align="left">154/189,426 (0)</td>
+</tr>
+<tr class="odd">
+<td align="left"><strong>p_black_african_american</strong></td>
+<td align="left">  </td>
+</tr>
+<tr class="even">
+<td align="left">   minimum</td>
+<td align="left">0.00</td>
+</tr>
+<tr class="odd">
+<td align="left">   median (IQR)</td>
+<td align="left">0.01 (0.00, 0.02)</td>
+</tr>
+<tr class="even">
+<td align="left">   mean (sd)</td>
+<td align="left">0.02 ± 0.04</td>
+</tr>
+<tr class="odd">
+<td align="left">   maximum</td>
+<td align="left">0.50</td>
+</tr>
+<tr class="even">
+<td align="left">   Unknown</td>
+<td align="left">154/189,426 (0)</td>
+</tr>
+<tr class="odd">
+<td align="left"><strong>p_hispanic_latino</strong></td>
+<td align="left">  </td>
+</tr>
+<tr class="even">
+<td align="left">   minimum</td>
+<td align="left">0.00</td>
+</tr>
+<tr class="odd">
+<td align="left">   median (IQR)</td>
+<td align="left">0.18 (0.10, 0.33)</td>
+</tr>
+<tr class="even">
+<td align="left">   mean (sd)</td>
+<td align="left">0.24 ± 0.19</td>
+</tr>
+<tr class="odd">
+<td align="left">   maximum</td>
+<td align="left">1.00</td>
+</tr>
+<tr class="even">
+<td align="left">   Unknown</td>
+<td align="left">154/189,426 (0)</td>
+</tr>
+<tr class="odd">
+<td align="left"><strong>p_white</strong></td>
+<td align="left">  </td>
+</tr>
+<tr class="even">
+<td align="left">   minimum</td>
+<td align="left">0.00</td>
+</tr>
+<tr class="odd">
+<td align="left">   median (IQR)</td>
+<td align="left">0.65 (0.45, 0.77)</td>
+</tr>
+<tr class="even">
+<td align="left">   mean (sd)</td>
+<td align="left">0.61 ± 0.20</td>
+</tr>
+<tr class="odd">
+<td align="left">   maximum</td>
+<td align="left">1.00</td>
+</tr>
+<tr class="even">
+<td align="left">   Unknown</td>
+<td align="left">154/189,426 (0)</td>
+</tr>
+<tr class="odd">
+<td align="left"><strong>p_multiracial</strong></td>
+<td align="left">  </td>
+</tr>
+<tr class="even">
+<td align="left">   minimum</td>
+<td align="left">0.00</td>
+</tr>
+<tr class="odd">
+<td align="left">   median (IQR)</td>
+<td align="left">0.07 (0.04, 0.08)</td>
+</tr>
+<tr class="even">
+<td align="left">   mean (sd)</td>
+<td align="left">0.07 ± 0.03</td>
+</tr>
+<tr class="odd">
+<td align="left">   maximum</td>
+<td align="left">0.35</td>
+</tr>
+<tr class="even">
+<td align="left">   Unknown</td>
+<td align="left">154/189,426 (0)</td>
+</tr>
+<tr class="odd">
+<td align="left"><strong>free_lunch_qualified</strong></td>
+<td align="left">  </td>
+</tr>
+<tr class="even">
+<td align="left">   minimum</td>
+<td align="left">0</td>
+</tr>
+<tr class="odd">
+<td align="left">   median (IQR)</td>
+<td align="left">210.00 (122.00, 306.00)</td>
+</tr>
+<tr class="even">
+<td align="left">   mean (sd)</td>
+<td align="left">227.73 ± 146.13</td>
+</tr>
+<tr class="odd">
+<td align="left">   maximum</td>
+<td align="left">813</td>
+</tr>
+<tr class="even">
+<td align="left">   Unknown</td>
+<td align="left">3,216/189,426 (2)</td>
+</tr>
+<tr class="odd">
+<td align="left"><strong>reduced_price_lunch_qualified</strong></td>
+<td align="left">  </td>
+</tr>
+<tr class="even">
+<td align="left">   minimum</td>
+<td align="left">0</td>
+</tr>
+<tr class="odd">
+<td align="left">   median (IQR)</td>
+<td align="left">36.00 (22.00, 52.00)</td>
+</tr>
+<tr class="even">
+<td align="left">   mean (sd)</td>
+<td align="left">39.51 ± 24.44</td>
+</tr>
+<tr class="odd">
+<td align="left">   maximum</td>
+<td align="left">132</td>
+</tr>
+<tr class="even">
+<td align="left">   Unknown</td>
+<td align="left">3,216/189,426 (2)</td>
+</tr>
+<tr class="odd">
+<td align="left"><strong>missing</strong></td>
+<td align="left">  </td>
+</tr>
+<tr class="even">
+<td align="left">   minimum</td>
+<td align="left">0</td>
+</tr>
+<tr class="odd">
+<td align="left">   median (IQR)</td>
+<td align="left">0.00 (0.00, 0.00)</td>
+</tr>
+<tr class="even">
+<td align="left">   mean (sd)</td>
+<td align="left">0.00 ± 0.00</td>
+</tr>
+<tr class="odd">
+<td align="left">   maximum</td>
+<td align="left">0</td>
+</tr>
+<tr class="even">
+<td align="left">   Unknown</td>
+<td align="left">3,216/189,426 (2)</td>
+</tr>
+<tr class="odd">
+<td align="left"><strong>not_applicable</strong></td>
+<td align="left">  </td>
+</tr>
+<tr class="even">
+<td align="left">   minimum</td>
+<td align="left">0</td>
+</tr>
+<tr class="odd">
+<td align="left">   median (IQR)</td>
+<td align="left">0.00 (0.00, 0.00)</td>
+</tr>
+<tr class="even">
+<td align="left">   mean (sd)</td>
+<td align="left">0.00 ± 0.00</td>
+</tr>
+<tr class="odd">
+<td align="left">   maximum</td>
+<td align="left">0</td>
+</tr>
+<tr class="even">
+<td align="left">   Unknown</td>
+<td align="left">3,216/189,426 (2)</td>
+</tr>
+<tr class="odd">
+<td align="left"><strong>no_category_codes</strong></td>
+<td align="left">  </td>
+</tr>
+<tr class="even">
+<td align="left">   minimum</td>
+<td align="left">0</td>
+</tr>
+<tr class="odd">
+<td align="left">   median (IQR)</td>
+<td align="left">245.00 (152.00, 356.00)</td>
+</tr>
+<tr class="even">
+<td align="left">   mean (sd)</td>
+<td align="left">267.24 ± 164.39</td>
+</tr>
+<tr class="odd">
+<td align="left">   maximum</td>
+<td align="left">920</td>
+</tr>
+<tr class="even">
+<td align="left">   Unknown</td>
+<td align="left">3,216/189,426 (2)</td>
+</tr>
+<tr class="odd">
+<td align="left"><strong>n</strong></td>
+<td align="left">  </td>
+</tr>
+<tr class="even">
+<td align="left">   minimum</td>
+<td align="left">12</td>
+</tr>
+<tr class="odd">
+<td align="left">   median (IQR)</td>
+<td align="left">597.00 (420.00, 1,157.00)</td>
+</tr>
+<tr class="even">
+<td align="left">   mean (sd)</td>
+<td align="left">806.08 ± 540.65</td>
+</tr>
+<tr class="odd">
+<td align="left">   maximum</td>
+<td align="left">3,144</td>
+</tr>
+<tr class="even">
+<td align="left">   Unknown</td>
+<td align="left">3,216/189,426 (2)</td>
+</tr>
+</tbody>
+</table>
+<p>Finally, our categorical variables include student specific measures:</p>
+<ul>
+<li><code>gndr</code>, student gender, M = male, F = female</li>
+<li><code>ethnic_cd</code>, student ethnicity (see <a href="">data dictionary</a> for specific coding)</li>
+<li></li>
+</ul>
 </div>
 <div id="overall-data-examination" class="section level2">
 <h2>Overall Data Examination</h2>
@@ -130,18 +555,28 @@ frl_fulltrain %&gt;%
   cor(use = &quot;complete.obs&quot;) %&gt;% 
   corrplot::corrplot()</code></pre>
 {{% figure src="/plots/variablerelations.pdf" alt="Variable Relations" %}}
-<p>##Splitting and Pre-Processing the Data</p>
-<p>First, we split the data into two separate sets: a “training” set and a “testing” set. The training set is used to train a model and, if desired, to adjust (“tune” in ML language) the model’s hyperparameters before evaluating its final performance on the test data. This helps us assess the “out of sample” accuracy and limit overfitting to the training set. Overfitting refers to a model that models the training data too well. It occurs when a model learns the detail and noise in the training data to the extent that it negatively impacts the performance of the model on new data. This means that the noise or random fluctuations in the training data is picked up and learned as concepts by the model. The problem is that these concepts do not apply to new data and negatively impact the models ability to generalize.</p>
-<p>To split our data, we use the initial_split() function from the {rsample} package. The default is that 75% of the data goes to the training set and 25% to the test set, but this can be adjusted with the prop argument.</p>
-<p>To prevent overfitting, we resample the data using vfold_cv() which outputs k-fold cross-validated versions of the training data, where k is the number of times we resample. By setting k to 6 data sets, we get a better estimate of the model’s out-of-sample accuracy. This decreases bias from overfitting. And of course, we should always remember to set the seeds first.</p>
+</div>
+<div id="splitting-resampling-and-pre-processing-the-data" class="section level2">
+<h2>Splitting, Resampling, and Pre-Processing the Data</h2>
+<p>Now that we’ve examined our data, the first step of preparing to fit our tree models is splitting the data (<code>frl_fulltrain</code>) into two separate sets:</p>
+<ol style="list-style-type: decimal">
+<li><p>The <code>training</code> set, which is used to train a model and tune the model’s hyperparameters - essentially to fit the model to a (hopefully representative) subset of the data, and alter the parameters of the model that we set before the model starts fitting to the data. Hyperparameters are discussed more in each of the model-specific posts.</p></li>
+<li><p>The <code>testing</code> set, which is used to evaluate the performance of the model we’ve trained, sometimes called “out-of-sample” accuracy. It also helps us avoid overfitting our model to the training dataset, or fitting a model too closely to the data we use to train, such that it is unable to accurately describe additional data outside of the training set because the model is describing random fluctuations (“noise”) that isn’t actually meaningful in our training set. This is the machine learning equivalent of getting your clothes tailored - they’ll fit you <em>perfectly</em>, but even someone who wears the same standard clothing size you do would find these specially-tailored-to-you clothes ill-fitting for them. In this analogy, our goal is to figure out the clothing size of the data we’re training on and create clothing (a model) that our data can wear, but that the other data we haven’t seen (such as the test set) will be able to wear too (generalizability).</p></li>
+</ol>
+<p>You might be thinking at this point - wait, we already have two data files called <code>train.csv</code> and <code>test.csv</code>… are we using them, or are we splitting again? The answer is we’re splitting again. We don’t touch the <code>test.csv</code> file at all until we have fit a final model we’re happy with using our <code>train.csv</code> file (training on the <code>test.csv</code> is data leakage, and would give us an inaccurate measure of our model’s performance, since we’d have fit it to the data we’re supposed to use to tell us how well it performs). So instead, we need to find a way to both train and test within our <code>train.csv</code> data (now called <code>frl_fulltrain</code> after we added in the additional data above), so we split <em>again</em> to create a sub-training and testing set from the original training data.</p>
+<p>To split or <code>frl_fulltrain</code> data, we will use the fuction <code>initial_split()</code> from the {rsample} package. By default, this function splits the data at random such that 75% of the data is in the training set and 25% in the testing set. This can be altered using the argument <code>prop =</code>, although in this case, we’re going to stick with this default split proportion.</p>
+<p>We’re then going to do something called “resampling” on our newly created training set <code>train</code> (made up of 75% of the <code>frl_fulltrain</code> data). We carry out resampling because an important part of training our model is seeing how well it’s doing… but we can’t touch our training set, since that would be data leakage. So since we can’t use that data, we run into the issue of re-predicting the same data over and over, which isn’t ideal, since it biases results by increasing the probability of overfitting, and means we won’t have any measure of variance with only one performance measure. Instead, we split the data into smaller re-samples that have an “analysis” and a “assessment” set, so we can train on the “analysis” set and evaluate the model we create on the “assessment” set without using our training set.</p>
+<p>There are many ways to do this resampling, including k-fold cross validation, Monte Carlo cross-validation, bootstrapping, and leave-one-out cross validation. We’re going to use the most common resampling method in machine learning, k-fold cross validation. in this resampling method, we randomly split the data into some number (k) of distinct samples, or “folds” of approximately equal size. Here, we are using 10-fold cross validation, meaning we split our <code>train</code> data into 10 distinct folds. Each fold contains a distinct 10% of our <code>train</code> data, meaning that each row appears in only one of our assessment samples, and the other 90% of the <code>train</code> data serves as the analysis set for that fold. If we had done 6-fold cross validation, each fold would have approximately 16.66% of our data as the assessment set, and the remaining 83.33% would serve as the analysis set.</p>
+<p>Here, we conduct this k-fold cross validation using the function <code>vfold_cv</code> where we set which variable to stratify on, <code>strata =</code> (here, our dv, “score”) and the value of k, or the number of folds we want to split our data into, using <code>v =</code>).</p>
+<p>Note that we also use the function <code>set.seed()</code>. Because our data is randomly split, we use this function to set the starting number used to generate a sequence of random numbers, which just ensures that everytime we run this code, we will get the same sample and results. Without this, the randomization would mean our results would differ slightly each time, which can be frustrating when trying to collaborate and write up results!</p>
 <pre class="r"><code>set.seed(500)
 edu_split &lt;- initial_split(frl_fulltrain)
 train &lt;- training(edu_split)
 test &lt;- testing(edu_split)
 
-train_cv &lt;- vfold_cv(train, strata = &quot;score&quot;, v = 6)</code></pre>
+train_cv &lt;- vfold_cv(train, strata = &quot;score&quot;, v = 10)</code></pre>
 <p>#Preparing and baking the recipe (i.e. Feature engineering)</p>
-<p>Before we add in our data to the model, we are going to set up an object that pre-processes our data. This is called a recipe. To create a recipe, we will first specify a formula for our model, indicating which variable is our outcome and which are our predictors. Here, we will use all variables other than score as predictors. We then specify a series of pre-processing steps for our data that directs our recipe to assign our variables a role, encode, omit or impute missing data, and/or model other feature engineering steps .</p>
+<p>Now that we’ve split our data, and resampled it, we need to prepare it for model fitting, using a process called “pre-processing”. Before we add in our data to the model, we are going to set up an object that pre-processes our data. This is called a recipe. To create a recipe, we will first specify a formula for our model, indicating which variable is our outcome and which are our predictors. Here, we will use all variables other than score as predictors. We then specify a series of pre-processing steps for our data that directs our recipe to assign our variables a role, encode, omit or impute missing data, and/or model other feature engineering steps .</p>
 <p>Our recipe does the following:</p>
 <ul>
 <li>Sets score as the outcome, and models all other variables in the dataset</li>
@@ -157,7 +592,7 @@ train_cv &lt;- vfold_cv(train, strata = &quot;score&quot;, v = 6)</code></pre>
 <pre class="r"><code>rec &lt;- recipe(score ~., train) %&gt;%
   step_mutate(tst_dt = lubridate::mdy_hms(tst_dt),
               time_index = as.numeric(tst_dt)) %&gt;%
-  step_rm(contains(&quot;bnch&quot;)) %&gt;%
+  step_rm(contains(&quot;bnch&quot;)) %&gt;% 
   update_role(tst_dt, new_role = &quot;time_index&quot;) %&gt;%
   update_role(contains(&quot;id&quot;), ncessch, new_role = &quot;id&quot;) %&gt;% #removed sch_name
   step_novel(all_nominal(), -all_outcomes()) %&gt;%
@@ -170,7 +605,9 @@ train_cv &lt;- vfold_cv(train, strata = &quot;score&quot;, v = 6)</code></pre>
   step_interact(terms = ~ starts_with(&#39;lat&#39;):starts_with(&quot;lon&quot;))
 
 prep(rec) </code></pre>
-<p>#Setting up a model and workflow</p>
+</div>
+<div id="setting-up-a-model-and-workflow" class="section level2">
+<h2>Setting up a model and workflow</h2>
 <p>There are a few core elements that you will need to specify to create a model. This apllies to all models.</p>
 <ul>
 <li>The type of model: Here we will be focusing on tree-based models.</li>
