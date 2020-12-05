@@ -16,7 +16,7 @@ Bagged trees are just a special case of random forests where there is no samplin
 
 **Hyperparameters to be optimized**
 
-Unlike random forrest, there is not a way to easily access the “out-of-the-box” (OOB) samples with **{baguette}**. Thankfully, we can tune the model similar to what we do with random forrest using the [**{ranger}**] package, and this will allow us to access the OOB samples. To fit a bagged tree with **{ranger}**, we set the `mtry` argument equal to the number of predictors in our data frame calculated by extracting the number of columns in the data and substracting one (to not account for the predictor).
+Unlike random forrest, there is not a way to easily access the “out-of-the-box” (OOB) samples with **{baguette}**. Thankfully, we can tune the model similar to what we do with random forrest using the **{ranger}** package, and this will allow us to access the OOB samples. To fit a bagged tree with **{ranger}**, we set the `mtry` argument equal to the number of predictors in our data frame calculated by extracting the number of columns in the data and substracting one (to not account for the outcome).
 
 Overall, we tune the number of `trees` and `min_n` since `m_try` is already set depending on the number of predictors. 
 
@@ -28,9 +28,10 @@ To illustrate this, it is important to understand that bagging like boosting is 
 
 **Bagged Tree Model Assumptions**
 
-Similar to the the decision trees model and other decision-tree based models, the bagged tree model share the same assumptions. Because decision trees function to split the data, they have no probabilistic model, and therefore we do not need to make any assumptions about the underlying data distribution. Bagging does not make any assumptions about the underlying data distribution.
+Similar to the the decision trees model and other decision-tree based models, the bagged tree model share the same assumptions. Because decision trees function to split the data, they have no probabilistic model, and therefore bagging does not need to make any assumptions about the underlying data distribution. 
 
 **Model Performance Evaluation**
+
 We will evaluate the performance of this model after training by applying it to our held out test split from the training data (also called the validation set). We will examine rmse (appropriately, the root mean squared error, the standard deviation of the residuals), rsq (R-squared, the proportion of variance in the dependent variable explained by the variables in our regression model), and huber-loss (a loss function that represents absolute error, and is less sensitive to outliers than the mse and rmse), but largely rely upon the rmse as our single evaluator of the performance of this and the other tree models we present in this blog in order to select our final model.
 
 ## Fitting the Bagged Tree Model
@@ -74,7 +75,7 @@ collect_metrics(fit_bag)
 
 ### Model Turning 
 
-Next, we will tune the number of trees hyperparameter. We set min_n to 2. 
+Next, we will tune the number of trees hyperparameter. We set min_n to 2. We will use a functions that pulls multiple RMSEs and we will graph them to figure out the optimnal number of bags needed for this data.
 
 ```{r eval=FALSE}
 
@@ -114,14 +115,16 @@ ggplot(aucs, aes(b, mean)) +
   geom_point() 
 ```
 
-![plot](https://www.dropbox.com/s/snu676nlu1014yi/rmse_auc.png?dl=0)
+![RMSE plot](https://www.dropbox.com/s/snu676nlu1014yi/rmse_auc.png?dl=0)
 
 We see from the plot above that setting $b$ to 175 would be the optiomal number of trees. 
 
 
-### Bagged trees visualization 
+### Bagged Trees Visualization 
 
-The plot below shows the root nodes from a bagged tree made of 60 trees (6 folds x 10 bootstrapped resamples). Root nodes are the 1st node in a decision tree, and they are determined by which variable best optimizes a loss function (e.g., minimizes RMSE for continuous outcomes or Gini Index for categorical outcomes).  
+The plot below shows the root nodes from a bagged tree made of 60 trees (6 folds x 10 resamples). As notes based on our RMSE, the optimal number of resamples (trees) is 175 but for time and computional eficiency purposes we only set it to 10 in this visualization.
+
+Root nodes are the 1st node in a decision tree, and they are determined by which variable best optimizes a loss function (e.g., minimizes RMSE for continuous outcomes or Gini Index for categorical outcomes).  
 
 ```{r eval=FALSE}
 # extract roots
@@ -147,15 +150,16 @@ bag_roots(fit_bag) %>%
 
 ```
 
-![Plot](https://www.dropbox.com/s/azkgm00earj5nvr/bagtree_root.png?dl=0)
+![Root nodes visualisation](https://www.dropbox.com/s/azkgm00earj5nvr/bagtree_root.png?dl=0)
 
 
 **Model Fitting Results**
+
 Finally, in order to get the results of our model with the tuned trees hyperparameter (175), we will apply this model to our full training dataset.
 
-From the fitted model, we then extract just the metrics (and save them) in order to compare the results of this bagged tree model with our random forest and boosted tree models in order to choose a final model to make student score predictions from the test data (test.csv) and to submit to kaggle.
+From the fitted model, we then extract just the metrics in order to compare the results of this bagged tree model with our random forest and boosted tree models in order to choose a final model to make student score predictions from the test data (test.csv) and to submit to kaggle.
 
-The following table shows our model fitting metric.
+The following table shows our model fitting metrics.
 
 ![Metrics Table](https://www.dropbox.com/s/m8hbr7mvqkjcq1z/bag_trees%20metrics%20table.png?dl=0)
 
@@ -182,12 +186,9 @@ preds_final <- predict(fit_workflow, full_test_FRL) #use model to make predictio
 head(preds_final)
 
 pred_frame <- tibble(Id = full_test_FRL$id, Predicted = preds_final$.pred)
-head(pred_frame, 20)
-nrow(pred_frame)
 
 #create prediction file
 write_csv(pred_frame, "fit_bag.csv")
-
 ```
 
 
