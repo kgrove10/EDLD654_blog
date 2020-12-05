@@ -99,7 +99,7 @@ We also translated our tuning model, which gives us a more interpretable printou
         min.node.size = tune(), num.threads = cores, importance = "permutation", 
         verbose = TRUE, seed = sample.int(10^5, 1))
 
-Next, we created a workflow, which is an object that can bundle together pre-processing  modeling, and post-processing requests. In this case, we are combining our recipe with our parsnip model specification, so that we can then prepare the recipe and fit the model using a single step, calling `fit()`. We also specify the three metrics we will evaluate our tuned models on, `rmse`, `rsq` and `huber_loss` (described above) using the `metric_set()` function. 
+Next, we created a workflow, which is an object that can bundle together pre-processing, modeling, and post-processing requests. In this case, we are combining our recipe with our parsnip model specification, so that we can then prepare the recipe and fit the model using a single step, calling `fit()`. We also specify the three metrics we will evaluate our tuned models on, `rmse`, `rsq` and `huber_loss` (described above) using the `metric_set()` function. 
 
 ```{r eval = FALSE}
 rf_tune_wflow <- workflow() %>%

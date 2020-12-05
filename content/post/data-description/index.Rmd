@@ -126,9 +126,9 @@ full_train <- left_join(full_train, ethnicities)
 frl_fulltrain <- left_join(full_train, frl)
 ```
 
-Now our three datasets are all loaded, cleaned, and joined together to make one cohesive data set we will use for all three of our tree-based models. Before we move on to preparing the data for modeling, let's explore and describe the variables present in our joined data set, `frl_fulltrain`. 
+Now our three datasets are all loaded, cleaned, and joined together to make one cohesive data set we will use for all three of our tree-based models. Before we move on to preparing the data for modeling, let's explore and describe the variables present in our joined data set, `frl_fulltrain`. The [data dictionary](https://github.com/kgrove10/EDLD654_blog/blob/main/static/data/data_dictionary.csv) for the main data (`test.csv` and `train.csv`) is also available on our github. 
 
-Each row of our data corresponds to an individual student observation. However, the data contained in each row includes both student-level variables, such as the student's grade, gender, ethnicity, and enrollment in various programs, as well as school-level and district-level data, such as school ethnicity proportions and the proportion of students who qualify for free or reduced lunch programs. A detailed data dictionary for the initial `train.csv` data can be found [here](), but we will attmpet to provide a brief description and overview of the 52 variables present in our `frl_fulltrain` data each of our three tree-based models will rely upon. 
+Each row of our data corresponds to an individual student observation. However, the data contained in each row includes both student-level variables, such as the student's grade, gender, ethnicity, and enrollment in various programs, as well as school-level and district-level data, such as school ethnicity proportions and the proportion of students who qualify for free or reduced lunch programs. A detailed data dictionary for the initial `train.csv` data can be found [here](), but we will attempt to provide a brief description and overview of the 52 variables present in our `frl_fulltrain` data each of our three tree-based models will rely upon. 
 
 Overall, our data consists of 17 numeric variables, 6 id variables, 1 date variable, and 28 categorical variables. 
 
@@ -154,11 +154,37 @@ datadesc <- import(here("static", "datadescriptives.csv"))
 summary_table(datadesc) 
 ```
 
-Finally, our categorical variables include student specific measures:
+Finally, our categorical variables are:
 
 - `gndr`, student gender, M = male, F = female
-- `ethnic_cd`, student ethnicity (see [data dictionary]() for specific coding)
-- 
+- `ethnic_cd`, student ethnicity (see the [data dictionary](https://github.com/kgrove10/EDLD654_blog/blob/main/static/data/data_dictionary.csv) for specific coding)
+- `calc_admn_cd`, code representing any special circumstances impacting test administration
+- `tst_bnch`, code indicating the benchmark level of the test administered
+- `migrant_ed_fg`, student participation in program for migratory children
+- `ind_ed_fg`, student participation in program for American Indian children
+- `sp_ed_fg`, student participation in an IEP program
+- `tag_ed_fg`, student participation in a talented and gifted program
+- `econ_dsvtg`, student eligibility in a free/reduced lunch program 
+- `ayp_lep`, student eligible to receive limited English proficient program services
+- `stay_in_dist`, student enrolled for over half of the days in the school year in their resident district as of May
+- `stay_in_schl`, student enrolled for over half of the days in the school year in their resident school as of May
+- `dist_sped`, student enrolled in district special education program
+- `trgt_assist_fg`, student record included in Title 1 Targeted Assistance for annual school performance calculations
+- `ayp_dist_partic`, student record included in AYP (adequate yearly progress) district participation calculations 
+- `ayp_dist_prfm`, student record included in AYP district performance calculations 
+- `ayp_schl_partic`, student record included in AYP school participation calculations
+- `ayp_schl_prfm`, student record included in AYP school performance calculations
+- `rc_dist_partic`, student record included in report card district participation calculations
+- `rc_dist_prfm`, student record included in report card district performance calculations
+- `rc_schl_partic`, student record included in report card school participation calculations
+- `rc_schl_prfm`, student record included in report card school performance calculations
+- `lang_cd`, code indicating language of test (S = Spanish, blank = English)
+- `tst_atmpt_fg`, code describing whether the test was attempted (yes or partially)
+- `grp_rpp_dist_partic`, record included in group report district participation calculations
+- `grp_rpt_dist_prfm`, record included in group report district performance calculations
+- `grp_rpp_schl_partic`, record included in group report school participation calculations
+- `grp_rpt_schl_prfm`, record included in group report school performance calculations
+
 
 ## Overall Data Examination
 
@@ -183,7 +209,7 @@ blogdown::shortcode("figure", src ='"/plots/Slide1.pdf"', alt = "Skimr Output")
 blogdown::shortcode("figure", src ='"/plots/Slide2.pdf"', alt = "Skimr Variable Relations")
 ```
 
-We can also use {corrplot} to visualize relationships among our numeric variables. However, this is a limited visual given that most of our predictors are acutally categorical. We do see strong correlations between several of our predictors, which isn't too concerning in terms of prediction, since tree-based models aren't particularly vulnerable to multi-collinearity, but is an issue with interpreting these models, since they could be relying on a variable to make splits that not the important or impactful variable you are actually interested in, but just a variable highly correlated with it (ensemble models like random forest help to address this issue - see the [random forest](https://edld654finalproject.netlify.app/2020/12/02/random-forest/) post for more discussion of this issue). 
+We can also use {corrplot} to visualize relationships among our numeric variables. However, this is a limited visual given that most of our predictors are actually categorical. We do see strong correlations between several of our predictors, which isn't too concerning in terms of prediction, since tree-based models aren't particularly vulnerable to multi-collinearity, but is an issue with interpreting these models, since they could be relying on a variable to make splits that not the important or impactful variable you are actually interested in, but just a variable highly correlated with it (ensemble models like random forest help to address this issue - see the [random forest](https://edld654finalproject.netlify.app/2020/12/02/random-forest/) post for more discussion of this issue). 
 
 ```{r eval = FALSE}
 #look at relations between variables
@@ -210,7 +236,7 @@ Now that we've examined our data, the first step of preparing to fit our tree mo
 
 You might be thinking at this point - wait, we already have two data files called `train.csv` and `test.csv`... are we using them, or are we splitting again?  The answer is we're splitting again. We don't touch the `test.csv` file at all until we have fit a final model we're happy with using our `train.csv` file (training on the `test.csv` is data leakage, and would give us an inaccurate measure of our model's performance, since we'd have fit it to the data we're supposed to use to tell us how well it performs). So instead, we need to find a way to both train and test within our `train.csv` data (now called `frl_fulltrain` after we added in the additional data above), so we split *again* to create a sub-training and testing set from the original training data. 
 
-To split or `frl_fulltrain` data, we will use the fuction `initial_split()` from the {rsample} package. By default, this function splits the data at random such that 75% of the data is in the training set and 25% in the testing set. This can be altered using the argument `prop = `, although in this case, we're going to stick with this default split proportion. 
+To split or `frl_fulltrain` data, we will use the function `initial_split()` from the {rsample} package. By default, this function splits the data at random such that 75% of the data is in the training set and 25% in the testing set. This can be altered using the argument `prop = `, although in this case, we're going to stick with this default split proportion. 
 
 We're then going to do something called "resampling" on our newly created training set `train` (made up of 75% of the `frl_fulltrain` data). We carry out resampling because an important part of training our model is seeing how well it's doing...  but we can't touch our training set, since that would be data leakage. So since we can't use that data, we run into the issue of re-predicting the same data over and over, which isn't ideal, since it biases results by increasing the probability of overfitting, and means we won't have any measure of variance with only one performance measure.  Instead, we split the data into smaller re-samples that have an "analysis" and a "assessment" set, so we can train on the "analysis" set and evaluate the model we create on the "assessment" set without using our training set. 
 
@@ -229,31 +255,33 @@ test <- testing(edu_split)
 train_cv <- vfold_cv(train, strata = "score", v = 10)
 ```
 
-#Preparing and baking the recipe (i.e. Feature engineering)
 
-Now that we've split our data, and resampled it, we need to prepare it for model fitting, using a process called "pre-processing". Before we add in our data to the model, we are going to set up an object that pre-processes our data. This is called a recipe. To create a recipe, we will first specify a formula for our model, indicating which variable is our outcome and which are our predictors. Here, we will use all variables other than score as predictors. We then specify a series of pre-processing steps for our data that directs our recipe to assign our variables a role, encode, omit or impute missing data, and/or model other feature engineering steps . 
+## Pre-Processing: Recipes, Missing Data, and Feature Engineering
 
-Our recipe does the following:
+Now that we've split our data, and resampled it, we need to prepare it for model fitting, using a process called "pre-processing". We do this by setting up a recipe, which allows us to specify the formula for our model and engage in various preprocessing steps including feature engineering, handling missing data, and assigning roles to our variables. More on pre-processing steps [here](https://www.tidymodels.org/find/recipes/). 
 
-* Sets score as the outcome, and models all other variables in the dataset
-* Transforms dates into numberic variables
-* Removes variables that contain "bnch"
-* Sets the role of ID variables (including ncessch) 
-* Imputes missing data
-* Removes zero-variance and near-zero variance predictor variables 
+In this case, our recipe does the following:
+
+* Sets score as the outcome, and models all other variables in the dataset, using `score ~ .`
+* Transforms our date variable, `tst_dt` into a recognizable date variable, using {lubridate} and gives it the role of "time_index"
+* Removes variables that contain "bnch", namely, `tst_bnch` which indicates the benchmark level of the administered test
+* Sets the role of the 6 ID variables we identified above, including ncessch, as "id"
+* Uses `step_novel()` and `step_unknown()` on our categorical variables to assign new variables in the data we supply to a new value, or missing data to the factor level "unknown" to handle categories we might have missed in our training data by nature of random assignment, and missing data in our categorical variables. 
+* Imputes missing data using `step_medianimpute()` and `step_rollimpute()` which substitutes missing values of numeric variables with the median of those variables, or in the case of roll impute, by the measure of location within a moving window (so it's better able to represent data that have a trend in them by using the median of the observations surrounding, rather than just the overall median) 
+* Removes zero-variance and near-zero variance predictor variables (such as `missing` and `not_applicable`)
 * Dummy codes all nominal predictor variables
+* And finally, interacts the latitude and longitude variables (`lat` and `lon`)
 
-Note: The order of these operations matters. If you end up with a rank-deficient model you need to revise your recipe. 
+It's important to note that the order in which we complete these operations is important, and if done incorrectly, can lead to a rank-deficient model.  
 
-A complete list of possible pre-processing steps can be found [here](https://www.tidymodels.org/find/recipes/)
 
 ```{r eval=FALSE}
 rec <- recipe(score ~., train) %>%
   step_mutate(tst_dt = lubridate::mdy_hms(tst_dt),
-              time_index = as.numeric(tst_dt)) %>%
+              time_index = as.numeric(tst_dt)) %>% #set to be date variable
   step_rm(contains("bnch")) %>% 
-  update_role(tst_dt, new_role = "time_index") %>%
-  update_role(contains("id"), ncessch, new_role = "id") %>% #removed sch_name
+  update_role(tst_dt, new_role = "time_index") %>% 
+  update_role(contains("id"), ncessch, new_role = "id") %>% 
   step_novel(all_nominal(), -all_outcomes()) %>%
   step_unknown(all_nominal(), -all_outcomes()) %>%
   step_rollimpute(all_numeric(), -all_outcomes(), -has_role("id"), -n) %>%
@@ -266,13 +294,40 @@ rec <- recipe(score ~., train) %>%
 prep(rec) 
 ```
 
-## Setting up a model and workflow
+When we prep our recipe, the output shows us exactly what our recipe is doing, and which variables the steps impact:
 
-There are a few core elements that you will need to specify to create a model. This apllies to all models. 
+    Data Recipe
+    
+    Inputs:
+    
+           role #variables
+             id          6
+        outcome          1
+      predictor         44
+     time_index          1
+    
+    Training data contained 142070 data points and 142070 incomplete rows. 
+    
+    Operations:
+    
+    Variable mutation for tst_dt, time_index [trained]
+    Variables removed tst_bnch [trained]
+    Novel factor level assignment for gndr, ethnic_cd, calc_admn_cd, ... [trained]
+    Unknown factor level assignment for gndr, ethnic_cd, calc_admn_cd, ... [trained]
+    Rolling Imputation for enrl_grd, lat, ... [trained]
+    Median Imputation for enrl_grd, lat, ... [trained]
+    Sparse, unbalanced variable filter removed calc_admn_cd, missing, not_applicable [trained]
+    Dummy variables from gndr, ethnic_cd, migrant_ed_fg, ind_ed_fg, ... [trained]
+    Sparse, unbalanced variable filter removed 85 items [trained]
+    Interactions with lat:lon [trained]
 
-* The type of model: Here we will be focusing on tree-based models. 
-* The engine: `set_engine()` calls the package to support the model you specified.
-* The mode: `set_mode()` indicates the type of prediction you would like to use in your model. You choose between regression and classification. In our case, we will be choosing regression because we are looking to predict student scores, which is a continuous predictor.
-* The arguments: `set_args()` allows you to set values for various parameters for your model, each model type will have a specific set of parameters that can be altered.
+## Preview of what is to come: Setting up a model and workflow 
 
-The final step here is to creat a workflow. A workflow combines all the elements we set up to create a cohesive framework, called a workflow, so we can run our desired models following the same exact framework. 
+Finally, we're ready to create a model! This is discussed with more specifics to each model on their respective blog posts, but there are a few elements we will need to specify for each model.
+
+(1) The model type: in this blog, we focus on three tree models, namely `bag_tree()`, `random_forest()` and `boost_tree()`.
+(2) The engine: using `set_engine()` we specify which package or system will be used to fit the model
+(3) The mode: using `set_mode()` we specify if we would like classification or regression. In all of our models, we aim to predict student test scores, so we will use regression. 
+(4) The arguments: using `set_args()`, we can modify the parameters, or arguments of a model specification. Hyperparameter tuning can be set within this argument, and is discussed in more detail within the model posts. 
+
+We will also utilize workflows in our model fits. A workflow is an object that can bundle together pre-processing, modeling, and post-processing requests in one step, such as our recipe and model specification. More detail and examples of creating workflows are present in each of the three tree-specific blog posts. 

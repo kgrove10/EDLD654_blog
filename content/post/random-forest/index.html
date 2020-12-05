@@ -75,7 +75,7 @@ ranger::ranger(formula = missing_arg(), data = missing_arg(),
     case.weights = missing_arg(), mtry = tune(), num.trees = tune(), 
     min.node.size = tune(), num.threads = cores, importance = &quot;permutation&quot;, 
     verbose = TRUE, seed = sample.int(10^5, 1))</code></pre>
-<p>Next, we created a workflow, which is an object that can bundle together pre-processing modeling, and post-processing requests. In this case, we are combining our recipe with our parsnip model specification, so that we can then prepare the recipe and fit the model using a single step, calling <code>fit()</code>. We also specify the three metrics we will evaluate our tuned models on, <code>rmse</code>, <code>rsq</code> and <code>huber_loss</code> (described above) using the <code>metric_set()</code> function.</p>
+<p>Next, we created a workflow, which is an object that can bundle together pre-processing, modeling, and post-processing requests. In this case, we are combining our recipe with our parsnip model specification, so that we can then prepare the recipe and fit the model using a single step, calling <code>fit()</code>. We also specify the three metrics we will evaluate our tuned models on, <code>rmse</code>, <code>rsq</code> and <code>huber_loss</code> (described above) using the <code>metric_set()</code> function.</p>
 <pre class="r"><code>rf_tune_wflow &lt;- workflow() %&gt;%
   add_recipe(rec) %&gt;%
   add_model(rf_tune_mod)
