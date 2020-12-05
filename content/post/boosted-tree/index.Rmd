@@ -1,6 +1,6 @@
 ---
 title: Boosted Tree
-author: ''
+author: 'Alexis Adams-Clark'
 date: '2020-12-03'
 slug: boosted-tree
 categories: []
@@ -12,29 +12,332 @@ In this post, we will outline how we fit a boosted tree model to our data.
 ## Boosted Tree Model Description
 
 **What does the Boosted Tree Model do?**
+"Boosting" is similar to "bagging," (see post on bagging) in that it's a general algorithm that can theoretically be used with many types of models. However, it's super common with tree models (see posts on bagging and random forest models that introduce the concepts of "decision trees"), so we are going to use it here to make a Boosted Tree Model. Unlike "bagging" (which uses bootstrap resampling), boosted models are built in a sequential and iterative manner, and each subsequent model is fit to the residuals (error term) of the previous model. In other words, each tree builds upon information from the prior tree. The steps to creating a decision tree are below: (courtesy of Daniel Anderson and Joe Nese). 
 
+First, a decision tree if fit the the data, which looks like: 
+$f_1\left(x\right) = y$
+
+Then, a second decision tree is fit to the residuals of the first, which looks like:
+$h_1\left(x\right) = y - f_1\left(x\right)$
+
+
+The trees are then added together to obtain an ensemble algorithm, which looks like:
+$f_2\left(x\right) = f_1\left(x\right) + h_1\left(x\right)$
+
+
+A new decision tree is then fit to the residuals of this model, which looks like:
+$h_2\left(x\right) = y - f_2\left(x\right)$
+
+
+This tree is then added to our ensemble again, which looks like :
+$f_3\left(x\right) = f_2\left(x\right) + h_2\left(x\right)$
+
+
+The process is repeated over and over again until we meet some specified stopping rule and we have our final model, which can be represented as: 
+$$
+f\left(x\right) =  \sum^B_{b=1}f^b\left(x\right)
+$$
 
 **Hyperparameters to be optimized**
+Boosted trees have SO MANY hyperparameters that can be tuned for model optimization. There are 4 primary hyperparameters for standard Boosted Tree Models, including: 
 
+*Tree Depth* - Like other tree models, tree depth is something to consider when designing a model. However, boosted trees typically involve shallow trees (3-6 splits). Boosted tree models with stumps (1 split) are also common. We probably want to stick with shallow trees because these are more computationally efficient, and deeper trees with a lot of splits put us at risk for overfitting to our training data. 
+
+*Minimum n for terminal nodes* - Although this is indeed a hyperparameter that can be optimized in our boosted tree model, it's rarely necessary to tune because boosted tree models usually do not grow trees that are very deep. Right now, we are not going to worry about this hyperparameter. 
+
+*n trees* - Unlike some other tree models, we want to really think about the number of trees that we fit in boosted tree models. This will determine how much our model learns overall. If we have too few trees, the model will underfit. If there are too many trees, the opposite will occur, and we will overfit. This often depends on what our tree depth is set to, so we want to pay close attention to the relationship between these two hyperparameters. If we have shallow trees that learn less, we might need a large number of total trees to balance that out. 
+
+*Learning Rate* - Our learning rate (which is also called shrinkage) maps onto the size of the step taken down our gradient during each iteration (see below for a discussion of gradient descent). These values vary from 0-1, but rarely are above 0.3. Smaller values tend to be more helpful because we learn less from each individual tree, leading to more optimal generalizations that avoid overfitting to our data. However, like most things in machine learning, there is a delicate balance that must be struck. If we have too small of a learning rate, the model can be more computationally intensive and require a large number of trees. It is also sill subject to local minima that might exist across our gradient decent landscape. 
+
+There are three additional hyperparameters for stochastic Boosted Tree Models that we can also consider (particularly if we want to add more randomness), including: 
+
+*Subsample of rows* - We can actually tune our model to select a subsample of cases in the training data for each tree (usually between 50-80%)
+
+*Subsample of columns for each tree* - We can also tune our model to select a sample of features (columns) to be used by each tree. 
+
+*Subsample of columns for each level* - We can also tune our model to select a sample of features (columns) to be used by each level. 
+
+*Subsample of columns for each node/split* - We can also tune our model to select a sample of features (columns) to be used by each split. 
+
+
+If you can believe it, there are even MORE hyperparameters we can consider if we use XGBoost through tidymodels to run our boosted tree model.
+
+*Loss Reduction* - controls the tree depth and specifies a minimum loss required for further splits. In other words, it stops growing the tree if the change in the cost function doesn't surpass a given threshold (see below for discussion of cost function). Although values range from 0 to infinity, values 1-20 are common.
+
+*L1 and L2 penalities* - also possible to add if model is continuing to overfit
+
+AND we can also very in our *early stopping* value. Although not a technical hyperparameter, it denotes a specific number of iterations that the algorithm will stop after if it's not improving predictions. This is another way to control the algoithm speed and protect against overfitting of the data. 
+
+Because we are using XGBoost through tidymodels, we will specify a large number of trees and an early stopping rule. We will then tune the learning rate, then the tree specific parameters, and then the stochastic components. 
 
 
 **Why did we select this model?**
+We selected this model because, unlike random forests, which aggregate predictions across many deep trees (with a lot of splits), boosted models are slow learners. Boosted models start with a base learner that's a shallow decision tree with only a few splits. These models may be considered "weak learners" because they learn very slowly. However, they are far from weak in the literal sense of the word! For model prediction, slow learning can have a lot of benefits; usually, it helps us find the most optimal solution. 
 
+Because of this, Boosted Tree Models are usually the best Out-Of-Box (OOB) models (and they win a lot of Kaggle data prediction competitions!). 
 
 
 **Boosted Tree Model Assumptions**
+Boosted Tree Models rely on an optimization algorithm known as Gradient Descent. Although gradient descent is a rather complex concept, it can be thought of as a way to evaluate our predictions against a "cost function," which then will move us in the direction with the "steepest descent." In a tree model, gradient descent is used to iteratively build each tree from the prior trees in the most optimal way. Models that use gradient specify a cost function, such as mean squared error. Then, the partial derivative of each model parameter is calculated according to the cost function, which will define our gradient landscape and allow us to move downhill in the steepest direction.  
 
+The distance that our predictions move is influenced by the learning rate of our model, which is multiplied by these derivative values and then subtracted from the current parameter estimates. This learning rate is essentially the speed at which the algorithm steps downhill. 
 
-**Model Performance Evaluation**
+The model continues to move down the gradient in an iterative fashion to minimize our model error until our model can't improve any more! During each iteration, we will take a step along the gradient in the mot optimal direction to reduce the error in our predictions. Luckily, we don't have to do any of this by hand ourselves because tidymodels will handle this for us! Bless you, tidymodels! 
 
 
 ## Fitting our Boosted Tree Model
 
 **Model Fitting Procedures** 
 
+First, we will start out with a default Boosted Tree Model with no hyperparameters. The arguments defined are based on recommendations from Daniel Anderson and Joe Nese. 
 
+```{r boost}
+set.seed(500)
+
+#default model without tuning
+mod <- boost_tree() %>% 
+  set_engine("xgboost", nthreads = parallel::detectCores()) %>% 
+  set_mode("regression") %>% 
+  set_args(trees = 5000, #number of trees in the ensemble
+           stop_iter = 20, #the number of iterations without improvement before stopping
+           validation = 0.2,
+           learn_rate = 0.1) #the rate at which boosting algoirithm adapts at each iteration
+
+#translate model, so we get a sense of what it looks like
+translate(mod_boost)
+
+#create workflow for default boosted model
+wf_df <- workflow() %>% 
+  add_recipe(rec) %>% 
+  add_model(mod)
+
+```
+
+```{r boost2}
+#fit default boosted model
+fit_default <- fit_resamples(
+  wf_df, 
+  train_cv, 
+  metrics = metric_set(rmse, rsq),
+  control = control_resamples(verbose = TRUE,
+                              save_pred = TRUE,
+                              extract = function(x) extract_model(x)))
+
+#look at metrics of default boosted model to evaluate performance
+collect_metrics(fit_default)
+
+```
+
+Now, let's try to tune the learning rate of the model to reduce the rmse even more. 
+
+```{r boosted tuning}
+set.seed(500)
+
+#tuned model
+tune_lr <- mod %>% 
+  set_args(trees = 5000, #number of trees in the ensemble
+           stop_iter = 20, #the number of iterations without improvement before stopping
+           validation = 0.2,
+           learn_rate = tune()) #the rate at which boosting algoirithm adapts at each iteration
+
+#let's get a sense of what this tuned model looks like
+translate(tune_lr)
+
+#create workflow for tuned model
+wf_tune_lr <- wf_df %>% 
+  update_model(tune_lr)
+```
+
+```{r boost4, eval = FALSE}
+
+#grid for tuning learning rate
+grd <- expand.grid(learn_rate = seq(0.0001, 0.3, length.out = 30))
+
+#fit model w/ tuned learning rate
+tune_tree_lr <- tune_grid(
+  wf_tune_lr, 
+  train_cv, 
+  grid = grd,
+  metrics = metric_set(rmse, rsq),
+  control = control_resamples(verbose = TRUE,
+                              save_pred = TRUE,
+                              extract = function(x) extract_model(x)))
+
+#Let's plot
+to_plot <- tune_tree_lr %>% 
+  unnest(.metrics) %>% 
+  group_by(.metric, learn_rate) %>% 
+  summarize(mean = mean(.estimate, na.rm = TRUE)) %>% 
+  filter(learn_rate != 0.0001) 
+
+highlight <- to_plot %>% 
+  filter(.metric == "rmse" & mean == min(mean)) %>%
+  ungroup() %>% 
+  select(learn_rate) %>% 
+  semi_join(to_plot, .)
+
+ggplot(to_plot, aes(learn_rate, mean)) +
+  geom_point() +
+  geom_point(color = "#de4f69", data = highlight) +
+  facet_wrap(~.metric, scales = "free_y")
+
+#Let's check out the metrics of the model
+tune_tree_lr %>% 
+  collect_metrics() %>% 
+  group_by(.metric) %>% 
+  arrange(mean) %>% 
+  dplyr::slice(1)
+
+#Not let's look at the model with the best rmse
+best_rmse <- tune_tree_lr %>% 
+  select_best(metric = "rmse")
+
+tune_tree_lr %>% 
+  collect_metrics() %>% 
+  semi_join(best_rmse)
+
+```
+
+
+If we wanted to now finalize our model and apply it to our test data to make predictions, we would use the following code. 
+
+```{r final model, eval = FALSE}
+
+#Finalize our workflow
+bt_wf_final <- finalize_workflow(
+  wf_tune_lr,
+  best_rmse)
+
+#fit to test set
+test_fit <- last_fit(bt_wf_final, edu_split)
+test_metrics <- test_fit$.metrics
+
+test_metrics %>%
+  write.csv("./BTTestMetrics.csv", row.names = FALSE)
+```
+
+Our final workflow applied to the full training dataset gives us the following results:
+
+```{r , eval = FALSE}
+testres <- import(here("static", "boosted_tree_model", "BTTestMetrics.csv"))
+
+knitr::kable(testres)
+
+```
 
 
 **Model Fitting Results**
+
+
+
+
+
+
+SPECIAL NOTE: if we wanted to tune other hyperparameters because we are really ambitious, we could use the following code (although we did not do this for our model predictions because it just took way too long!). 
+
+```{r boost tuning 2, eval = FALSE}
+set.seed(500)
+
+#new hyperparameters to tune
+tune_depth <- tune_lr %>% 
+  finalize_model(select_best(tune_tree_lr, "rmse")) %>% 
+  set_args(tree_depth = tune(), #tree depth - the maximum depth of a tree
+           min_n = tune()) #min_n - the minimum number of data points in a node thst is required for the node to be split further
+
+#update workflow
+wf_tune_depth <- wf_df %>% 
+  update_model(tune_depth)
+
+#update grid
+grd <- grid_max_entropy(tree_depth(), min_n(), size = 30)
+
+#fit model
+tune_tree_depth <- tune_grid(
+  wf_tune_depth, 
+  train_cv, 
+  grid = grd,
+  metrics = metric_set(rmse, rsq)
+
+#plot
+autoplot(tune_tree_depth)
+
+#show best
+show_best(tune_tree_depth, "rmse")
+```
+
+
+If we wanted to tune regularization, randomness, and learning rate one more time, we could use this code (although we did not do this for our model predictions because it just took way too long!)
+
+```{r tune 3, eval = FALSE}
+
+tune_reg <- tune_depth %>% 
+  finalize_model(select_best(tune_tree_depth, "rmse")) %>% 
+  set_args(loss_reduction = tune()) #loss_reduction - the reduction in the loss function required to split further
+
+#update workflow
+wf_tune_reg <- wf_df %>% 
+  update_model(tune_reg)
+
+#update grid
+grd <- expand.grid(loss_reduction = seq(0, 100, 5))
+
+#run model again
+tune_tree_reg <- tune_grid(
+  wf_tune_reg, 
+  train_cv, 
+  grid = grd)
+
+autoplot(tune_tree_reg)
+
+#show best
+show_best(tune_tree_reg, "rmse")
+
+#tune randomness
+tune_rand <- tune_reg %>%
+  finalize_model(select_best(tune_tree_reg, "rmse")) %>% 
+  set_args(mtry = tune(), #mtry - the number of predictors that will be randomly sampled at each split when creating the tree models
+           sample_size = tune()) #sample_size - the amount of data exposed to the fitting routine
+
+#update workflow
+wf_tune_rand <- wf_df %>% 
+  update_model(tune_rand)
+
+#update grid
+grd <- grid_max_entropy(finalize(mtry(), 
+                        juice(prep(rec))), 
+                        sample_size = sample_prop(), 
+                        size = 30)
+
+tune_tree_rand <- tune_grid(
+  wf_tune_rand, 
+  train_cv, 
+  grid = grd)
+
+#plot
+autoplot(tune_tree_rand)
+
+#show bet metrics
+show_best(tune_tree_rand, "rmse")
+
+
+#check learning rate one more time
+check_lr <- tune_rand %>% 
+  finalize_model(select_best(tune_tree_rand, "rmse")) %>% 
+  set_args(learn_rate = tune())
+
+#update workflow
+wf_final_lr <- wf_df %>% 
+  update_model(check_lr)
+
+#update grid
+final_lr <- tune_grid(wf_final_lr, cv, grid = 30)
+
+#plot
+autoplot(final_lr)
+
+#show best
+show_best(final_lr, "rmse")
+
+```
 
 

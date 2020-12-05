@@ -1,0 +1,159 @@
+---
+title: "boosted"
+output: html_document
+---
+
+In this post, we will outline how we fit a boosted tree model to our data. 
+
+## Boosted Tree Model Description
+
+**What does the Boosted Tree Model do?**
+
+
+**Hyperparameters to be optimized**
+
+
+
+**Why did we select this model?**
+
+
+
+**Boosted Tree Model Assumptions**
+
+
+**Model Performance Evaluation**
+
+
+## Fitting our Boosted Tree Model
+
+**Model Fitting Procedures** 
+
+
+
+
+**Model Fitting Results**
+
+```{r boost}
+set.seed(500)
+
+#default model without tuning
+mod <- boost_tree() %>% 
+  set_engine("xgboost", nthreads = parallel::detectCores()) %>% 
+  set_mode("regression") %>% 
+  set_args(trees = 5000, #number of trees in the ensemble
+           stop_iter = 20, #the number of iterations without improvement before stopping
+           validation = 0.2,
+           learn_rate = 0.1) #the rate at which boosting algoirithm adapts at each iteration
+
+#translate model, so we get a sense of what it looks like
+translate(mod_boost)
+
+#create workflow for default boosted model
+wf_df <- workflow() %>% 
+  add_recipe(rec) %>% 
+  add_model(mod)
+
+#fit default boosted model
+fit_default <- fit_resamples(
+  wf_df, 
+  train_cv, 
+  metrics = metric_set(rmse, rsq),
+  control = control_resamples(verbose = TRUE,
+                              save_pred = TRUE,
+                              extract = function(x) extract_model(x)))
+
+#look at metrics of default boosted model to evaluate performance
+collect_metrics(fit_default)
+
+```
+Now, let's try to tune the learning rate of the model to reduce the rmse even more. 
+
+```{r boosted tuning}
+set.seed(500)
+
+#tuned model
+tune_lr <- mod %>% 
+  set_args(trees = 5000, #number of trees in the ensemble
+           stop_iter = 20, #the number of iterations without improvement before stopping
+           validation = 0.2,
+           learn_rate = tune()) #the rate at which boosting algoirithm adapts at each iteration
+
+#let's get a sense of what this tuned model looks like
+translate(tune_lr)
+
+#create workflow for tuned model
+wf_tune_lr <- wf_df %>% 
+  update_model(tune_lr)
+
+#grid for tuning learning rate
+grd <- expand.grid(learn_rate = seq(0.0001, 0.3, length.out = 30))
+
+#fit model w/ tuned learning rate
+tune_tree_lr <- tune_grid(
+  wf_tune_lr, 
+  train_cv, 
+  grid = grd,
+  metrics = metric_set(rmse, rsq),
+  control = control_resamples(verbose = TRUE,
+                              save_pred = TRUE,
+                              extract = function(x) extract_model(x)))
+
+#Let's plot
+to_plot <- tune_tree_lr %>% 
+  unnest(.metrics) %>% 
+  group_by(.metric, learn_rate) %>% 
+  summarize(mean = mean(.estimate, na.rm = TRUE)) %>% 
+  filter(learn_rate != 0.0001) 
+
+highlight <- to_plot %>% 
+  filter(.metric == "rmse" & mean == min(mean)) %>%
+  ungroup() %>% 
+  select(learn_rate) %>% 
+  semi_join(to_plot, .)
+
+ggplot(to_plot, aes(learn_rate, mean)) +
+  geom_point() +
+  geom_point(color = "#de4f69", data = highlight) +
+  facet_wrap(~.metric, scales = "free_y")
+
+#Let's check out the metrics of the model
+tune_tree_lr %>% 
+  collect_metrics() %>% 
+  group_by(.metric) %>% 
+  arrange(mean) %>% 
+  dplyr::slice(1)
+
+#Not let's look at the model with the best rmse
+best_rmse <- tune_tree_lr %>% 
+  select_best(metric = "rmse")
+
+tune_tree_lr %>% 
+  collect_metrics() %>% 
+  semi_join(best_rmse)
+
+```
+
+
+If we wanted to now finalize our model and apply it to our test data to make predictions, we would use the following code. 
+
+```{r final }
+
+#Finalize our workflow
+bt_wf_final <- finalize_workflow(
+  wf_tune_lr,
+  best_rmse)
+
+#fit to test set
+test_fit <- last_fit(bt_wf_final, edu_split)
+test_metrics <- test_fit$.metrics
+
+test_metrics %>%
+  write.csv("./BTTestMetrics.csv", row.names = FALSE)
+```
+
+Our final workflow applied to the full training dataset gives us the following results:
+
+```{r 2}
+testres <- import(here("static", "boosted_tree_model", "BTTestMetrics.csv"))
+
+knitr::kable(testres)
