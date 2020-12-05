@@ -7,11 +7,9 @@ categories: []
 tags: []
 ---
 
-![There are so many types of trees! ](https://www.homestratosphere.com/wp-content/uploads/2019/07/Two-categories-of-trees.jpg)
+In this blog, we are going to describe how we used machine learning with the [tidymodels](https://www.tidymodels.org/) package (and a couple other packages we'll introduce later) to fit three different tree-based models to predict student test scores (bagged trees, random forests, and boosted trees).
 
-In this blog, we're going to walk through the basics for getting off the ground with machine learning using primarily the {tidymodels} package. Specifically, we will demontrate the application of three different tree-based methods for predicting student test scores. For further information about the {tidymodels}, you can visit [this page](https://www.tidymodels.org/).
-
-Before we start fitting models, let's talk more about the data we'll be using throughout our posts. 
+Before we get to fitting our models though, we'll introduce our data and the preprocessing and feature engineering steps we took to prepare our data to fit these three models.
 
 ## Intro to the Data
 
@@ -21,16 +19,16 @@ We also joined a couple additional data sets to this data that we think could he
 
 Example code to read in and join this data is as follows. Because of the size of this data and in the interest of not exhausting the vector memory of this blogdown site, we will present example code and output below without actually evaluating it. Reproducible code and output for each of our models can be found on our [GitHub](https://github.com/kgrove10/EDLD654_blog/tree/main/static) under each of the three model folders. 
 
-**Getting started: Loading and Cleaning the Data**
+## Getting Started: Loading and Cleaning the Data
 
 First, we will load some libraries into our environment that we will be using throughout this post. The classic {tidyverse} and for wrangling and {rio} for importing, our new {tidymodels} and the {skimr} package to help us explore our data and {knitr} to help us visualize tables.
 
 ```{r eval = FALSE}
-library(tidyverse) # manipulating data
-library(rio) #importing data
-library(tidymodels) 
-library(skimr) # data visualization
-library(knitr) #table visualization 
+library(tidyverse) #clean and tidy data
+library(rio) # import data
+library(tidymodels) # main modeling package
+library(skimr) # create data visualizations
+library(knitr) # create tables
 ``` 
 
 Next, we're going to read in the data. When we are importing the data, we will also sightly clean it. For example, with the fall membership 2019-2020 student enrollment report, we will update the names of columns to be in snake case to both match the names of our variable names in our main, `train.csv` data (e.g. "Attending School ID" becomes "attnd_schl_inst_id"), and to make these variables easier to work with in R.  When importing our free and reduced lunch data, we clean names, and also replace missing data with 0s for student counts. Below, we will go over each of the variables present in our data. 
@@ -136,23 +134,30 @@ Each row of our data corresponds to an individual student observation. However, 
 
 
 
-#Explore data
+## Overall Data Examination
 
-We will use the `skim()` function from {skimr} to take a closer look at the distribution of our variables. Many numeric predictors are non-normal (see histograms below), but this is not a problem since tree-based methods are robust to non-normality.
+Now that we've examined our individual variables in detail, we can use the {skimr} package's `skim()` function to take an overall look at the distribution of our numeric variables.  
 
 ```{r eval = FALSE}
 frl_fulltrain %>% 
-  select(-contains("id"), -ncessch) %>%  # remove ID and irrelevant variables
-  mutate(tst_dt = lubridate::as_date(lubridate::mdy_hms(tst_dt))) %>% # convert test date to be a date variable
-  modify_if(is.character, as.factor) %>%  # convert character vars to factors
+  select(-contains("id"), -ncessch) %>%  #remove id variables
+  mutate(tst_dt = lubridate::as_date(lubridate::mdy_hms(tst_dt))) %>% 
+  modify_if(is.character, as.factor) %>%  # convert character variables to factors
   skim() %>% 
   select(-starts_with("numeric.p")) # remove quartiles
 ```
 
-![T1](https://www.dropbox.com/s/vdxzvee369nx24q/Slide1.PNG?dl=0)
-![T2](https://www.dropbox.com/s/qxgz5gzdw273g33/Slide2.PNG?dl=0)
+The skimr output, below, tells us that we have 17 numeric variables, with 8 of them having some missing data. We'll address this issue of missing data when we pre-process our recipe below. Most of the distributions of these numeric variables noticeably deviate from normality, but this isn't concerning for us, since the tree-based models we'll be using for our model fits are all non-parametric, meaning they make fewer assumptions about the underlying distribution of the data, and do not assume or require normality. 
 
-We will also use {corrplot} to better visualize the relationships among the numeric variables shown in the table above. However, this is a limited visual given that most of our predictors are acutally categorical.
+```{r echo = FALSE}
+blogdown::shortcode("figure", src ='"/plots/Slide1.pdf"', alt = "Skimr Output")
+```
+
+```{r echo = FALSE}
+blogdown::shortcode("figure", src ='"/plots/Slide2.pdf"', alt = "Skimr Variable Relations")
+```
+
+We can also use {corrplot} to visualize relationships among our numeric variables. However, this is a limited visual given that most of our predictors are acutally categorical. We do see strong correlations between several of our predictors, which isn't too concerning in terms of prediction, since tree-based models aren't particularly vulnerable to multi-collinearity, but is an issue with interpreting these models, since they could be relying on a variable to make splits that not the important or impactful variable you are actually interested in, but just a variable highly correlated with it (ensemble models like random forest help to address this issue - see the [random forest](https://edld654finalproject.netlify.app/2020/12/02/random-forest/) post for more discussion of this issue). 
 
 ```{r eval = FALSE}
 #look at relations between variables
@@ -164,9 +169,12 @@ frl_fulltrain %>%
   corrplot::corrplot()
 ```
 
-![plot](https://www.dropbox.com/s/8a8a0u2aszufiyd/VariableRelations.png?dl=0)
+```{r echo = FALSE}
+blogdown::shortcode("figure", src ='"/plots/variablerelations.pdf"', alt = "Variable Relations")
+```
 
-#Split the data 
+
+##Splitting and Pre-Processing the Data 
 
 First, we split the data into two separate sets: a “training” set and a “testing” set. The training set is used to train a model and, if desired, to adjust (“tune” in ML language) the model’s hyperparameters before evaluating its final performance on the test data. This helps us assess the “out of sample” accuracy and limit overfitting to the training set. Overfitting refers to a model that models the training data too well. It occurs when a model learns the detail and noise in the training data to the extent that it negatively impacts the performance of the model on new data. This means that the noise or random fluctuations in the training data is picked up and learned as concepts by the model. The problem is that these concepts do not apply to new data and negatively impact the models ability to generalize. 
 
