@@ -86,7 +86,7 @@ The distance that our predictions move is influenced by the learning rate of our
 The model continues to move down the gradient in an iterative fashion to minimize our model error until our model can't improve any more! During each iteration, we will take a step along the gradient in the mot optimal direction to reduce the error in our predictions. Luckily, we don't have to do any of this by hand ourselves because tidymodels will handle this for us! Bless you, tidymodels! 
 
 
-## Fitting our Boosted Tree Model
+## Fitting our Boosted Tree Model 
 
 **Model Fitting Procedures** 
 
