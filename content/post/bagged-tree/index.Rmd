@@ -44,7 +44,7 @@ First, we set up our data as you can see in the data description and setup [here
 
 ```{r eval=FALSE}
 set.seed(500)
-
+ 
 #Specify model
 
 mod_bag <- bag_tree() %>%

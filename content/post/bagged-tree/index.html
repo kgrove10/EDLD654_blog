@@ -15,7 +15,7 @@ tags: []
 <div id="bagged-tree-model-description" class="section level2">
 <h2>Bagged Tree Model Description</h2>
 <p><strong>What does the Bagged Tree Model do?</strong></p>
-<p>Bagged trees are just a special case of random forests where there is no sampling of columns when each tree is built. A bagged tree approach creates multiple subsets of data from the training set which are randomly chosen with replacement. Each subset of data is used to train a given decision tree. In the end, we have an ensemble of different models. This is a general approach known as <strong>bagging</strong>, or <strong>b</strong>ootstrap <strong>agg</strong>regation. The predictions from all the different trees are averaged together, giving us a stronger prediction than one tree could independently.</p>
+<p>Bagged trees are a special case of random forests where there is no sampling of columns when each tree is built. A bagged tree approach creates multiple subsets of data from the training set where each of these subsets is used to train a given decision tree. The predictions from all the different subsets are averaged together, giving us a stronger prediction than one tree could do independently.</p>
 <p><strong>Hyperparameters to be optimized</strong></p>
 <p>Unlike random forrest, there is not a way to easily access the “out-of-the-box” (OOB) samples with <strong>{baguette}</strong>. Thankfully, we can tune the model similar to what we do with random forrest using the <strong>{ranger}</strong> package, and this will allow us to access the OOB samples. To fit a bagged tree with <strong>{ranger}</strong>, we set the <code>mtry</code> argument equal to the number of predictors in our data frame calculated by extracting the number of columns in the data and substracting one (to not account for the outcome).</p>
 <p>Overall, we tune the number of <code>trees</code> and <code>min_n</code> since <code>m_try</code> is already set depending on the number of predictors.</p>
@@ -34,7 +34,7 @@ tags: []
 <div id="model-fiting" class="section level3">
 <h3>Model Fiting</h3>
 <pre class="r"><code>set.seed(500)
-
+ 
 #Specify model
 
 mod_bag &lt;- bag_tree() %&gt;%
@@ -97,8 +97,7 @@ plan(sequential)</code></pre>
 </div>
 <div id="bagged-trees-visualization" class="section level3">
 <h3>Bagged Trees Visualization</h3>
-<p>The plot below shows the root nodes from a bagged tree made of 60 trees (6 folds x 10 resamples). As notes based on our RMSE, the optimal number of resamples (trees) is 175 but for time and computional eficiency purposes we only set it to 10 in this visualization.</p>
-<p>Root nodes are the 1st node in a decision tree, and they are determined by which variable best optimizes a loss function (e.g., minimizes RMSE for continuous outcomes or Gini Index for categorical outcomes).</p>
+<p>The plot below shows the root nodes from a bagged tree made of 60 trees (6 folds x 10 resamples). As noted based on our RMSE, the optimal number of resamples (trees) is 175 but for time and computional eficiency purposes we only set it to 10 in this visualization.</p>
 <pre class="r"><code># extract roots
 bag_roots &lt;-  function(x){
   x %&gt;% 
@@ -119,18 +118,12 @@ bag_roots(fit_bag) %&gt;%
   geom_bar() + 
   coord_flip() + 
   labs(x = &quot;Root&quot;, y = &quot;Count&quot;)</code></pre>
-<div class="figure">
-<img src="https://www.dropbox.com/s/azkgm00earj5nvr/bagtree_root.png?dl=0" alt="Root nodes visualisation" />
-<p class="caption">Root nodes visualisation</p>
-</div>
+{{% figure src="/plots/bagtree_root.png" alt="Root nodes" %}}
 <p><strong>Model Fitting Results</strong></p>
 <p>Finally, in order to get the results of our model with the tuned trees hyperparameter (175), we will apply this model to our full training dataset.</p>
 <p>From the fitted model, we then extract just the metrics in order to compare the results of this bagged tree model with our random forest and boosted tree models in order to choose a final model to make student score predictions from the test data (test.csv) and to submit to kaggle.</p>
 <p>The following table shows our model fitting metrics.</p>
-<div class="figure">
-<img src="https://www.dropbox.com/s/m8hbr7mvqkjcq1z/bag_trees%20metrics%20table.png?dl=0" alt="Metrics Table" />
-<p class="caption">Metrics Table</p>
-</div>
+{{% figure src="/plots/metrics.png" alt="Metrics Table" %}}
 <p>The following code shows our the final fit of the model to the testing data to make predictions.</p>
 <pre class="r"><code>#make predictions on test.csv
 full_test &lt;- read_csv(&quot;data/test.csv&quot;,
