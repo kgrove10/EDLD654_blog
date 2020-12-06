@@ -35,7 +35,9 @@ Share code to communicate our procedures, and discuss our final model selection 
 
 **More comparison notes to take into account. 
 
-Based on our general knowledge, boosting usually outperforms Random Forest and Bagging, but RandomForest is easier to implement. In Random Forest, the only tuning parameter is the number of trees; while in boosting, more tuning parameters are required besides the number of trees, including the shrinkage and the interaction depth.
+Based on our general knowledge, boosting usually outperforms Random Forest and Bagging, but Random Forest is easier to implement. In Random Forest, we can tune many hyperparameters, including those we examined, namely the number of predictors sampled at each split, the number of individual decision trees to be created, and the minimum number of data points present in a terminal node. 
+
+However, in boosting, more tuning parameters are required, including the shrinkage and the interaction depth.
 
 
 

@@ -22,8 +22,7 @@ A random forest model uses these decision trees in aggregate (sometimes called e
 The random forest model provides very good "out-of-the-box" performance, meaning that its default hyperparameter values tend to produce good results.  That said, there are hyperparameters that can be tuned in the random forest model. We will tune three of them, `mtry`, `trees` and `min_n`:
 
 - `mtry` represents the number of predictors that will be sampled randomly at each split when creating the constitutive decision trees. 
-- `trees` represents the number of individual decision trees to be created and then aggregated across. 
-- `min_n` represents the minimum number of data points present in a node to terminate that node - essentially, how specific should we get?  How many data points should be present in a terminal node (or leaf) when we cease splitting our data? 
+- `trees` represents the number of individual decision trees to be created and then aggregated across. - `min_n` represents the minimum number of data points present in a node to terminate that node - essentially, how specific should we get?  How many data points should be present in a terminal node (or leaf) when we cease splitting our data? 
 
 Other hyperparameters we did not tune but that could be tuned for random forest models include the sampling (sapling? :) ) scheme (the default is bootstrapping, where observations are tuned with replacement) and the split rule (the default is the split that maximizes the Gini impurity). 
 

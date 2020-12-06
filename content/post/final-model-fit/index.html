@@ -14,8 +14,20 @@ tags: []
 <p>This post will do the following:</p>
 <ul>
 <li>Compare and contrast the three different model fits, including a discussion of model performance.</li>
-<li><p>Share code to communicate our procedures, and discuss our final model selection and the evidence that led us to this selection.</p></li>
-<li><p>Random forest: rmse = 85.8138947197454, rsq = 0.452623773165699, computation time (on talapas) = 22911.134 seconds (to tune and fit).</p></li>
+<li>Share code to communicate our procedures, and discuss our final model selection and the evidence that led us to this selection.</li>
+<li>Random forest: rmse = 85.8138947197454, rsq = 0.452623773165699, computation time (on talapas) = 22911.134 seconds (to tune and fit).</li>
 </ul>
 <p>NOTE: we should probably put in some mention of the fact that we all computed predictions based on the test.csv dataset, because of the computational intensity of several of our datasets, in order to ease submission once we had selected the best model based on rmse. (just to increase our transparency!)</p>
 <p>Finally, we will will also submit our final model predictions from your final model to kaggle so that a quantitative indicator of prediction accuracy can be provided.</p>
+<p>There are a myriad of decisions one must make when designing and configuring a prediction model. As we have seen in our three examples, we needed to make decisions about hyperparameter tuning, the structure of the recipe among many other decisions. In almost all of these decisions, we used heuristics based on our knowledge and benchmark, tested our decisions on small fractions of data, evaluate the final metrics mainly the RMSE, to finally apply our model to the unseen test data.</p>
+<p>Therefore, it is important to have a robust test harness that allows you to estimate the performance of a given model configuration on unseen data, and reliably compare the performance to other model configurations. In this post, we will attempt walk you through our comparison steps.</p>
+<p>First, we collect metrics of the 3 models. The metrics below show the final results of the out-of-sample performance for each of our three models:</p>
+<ul>
+<li>Random forest based on final test: rmse = 85.8138947197454, rsq = 0.452623773165699, computation time (on talapas, the University of Oregon virtual super computer) = 22911.134 seconds (to tune and fit).</li>
+<li>Bagged tree metrics estimated based on a fraction of data: rmse = 113.8576209 , rsq = 0.2422997, computation time (on personal computer) = 21600 seconds (to fit). The tunning was done based on a fraction of data and the resulting estimates of the hyperparamerters were used on the final prediction.</li>
+<li>Boosted tree:</li>
+</ul>
+<p>Share code to communicate our procedures, and discuss our final model selection and the evidence that led us to this selection.</p>
+<p>**More comparison notes to take into account.</p>
+<p>Based on our general knowledge, boosting usually outperforms Random Forest and Bagging, but Random Forest is easier to implement. In Random Forest, we can tune many hyperparameters, including those we examined, namely the number of predictors sampled at each split, the number of individual decision trees to be created, and the minimum number of data points present in a terminal node.</p>
+<p>However, in boosting, more tuning parameters are required, including the shrinkage and the interaction depth.</p>
