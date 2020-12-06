@@ -216,24 +216,10 @@ Interactions with lat:lon [trained]
 > 
 > cores <- 8
 > 
-> #default model without tuning
-> mod <- boost_tree() %>% 
+> #tuned model
+> tune_lr <- boost_tree() %>% 
 +   set_engine("xgboost", num.threads = cores) %>% 
 +   set_mode("regression") %>% 
-+   set_args(trees = 5000, #number of trees in the ensemble
-+            stop_iter = 20, #the number of iterations without improvement before stopping
-+            validation = 0.2,
-+            learn_rate = 0.1) #the rate at which boosting algoirithm adapts at each iteration
-> 
-> 
-> #create workflow for default boosted model
-> wf_df <- workflow() %>% 
-+   add_recipe(rec) %>% 
-+   add_model(mod)
-> 
-> 
-> #tuned model
-> tune_lr <- mod %>% 
 +   set_args(trees = 5000, #number of trees in the ensemble
 +            stop_iter = 20, #the number of iterations without improvement before stopping
 +            validation = 0.2,
@@ -261,26 +247,1158 @@ parsnip::xgb_train(x = missing_arg(), y = missing_arg(), nrounds = 5000,
     nthread = 1, verbose = 0)
 > 
 > #create workflow for tuned model
-> wf_tune_lr <- wf_df %>% 
-+   update_model(tune_lr)
+> wf_tune_lr <- workflow() %>% 
++   add_recipe(rec) %>% 
++   add_model(tune_lr)
 > 
 > #grid for tuning learning rate
-> grd <- expand.grid(learn_rate = seq(0.0001, 0.3, length.out = 30))
+> grd <- expand.grid(learn_rate = seq(0.0001, 0.6, length.out = 30))
 > 
 > metrics_eval <- metric_set(rmse, 
-+                            rsq, 
-+                            huber_loss)
++                            rsq)
 > 
 > #fit model w/ tuned learning rate
 > tune_tree_lr <- tune_grid(
 +   wf_tune_lr, 
 +   train_cv, 
 +   grid = grd,
-+   metrics = metric_eval,
++   metrics = metrics_eval,
 +   control = control_resamples(verbose = TRUE,
 +                               save_pred = TRUE,
 +                               extract = function(x) extract_model(x)))
-Error in check_metrics(metrics, workflow) : 
-  object 'metric_eval' not found
-Calls: tune_grid ... tune_grid.workflow -> tune_grid_workflow -> check_metrics
-Execution halted
+
+Attaching package: ‘rlang’
+
+The following objects are masked from ‘package:purrr’:
+
+    %@%, as_function, flatten, flatten_chr, flatten_dbl, flatten_int,
+    flatten_lgl, flatten_raw, invoke, list_along, modify, prepend,
+    splice
+
+
+Attaching package: ‘vctrs’
+
+The following object is masked from ‘package:dplyr’:
+
+    data_frame
+
+The following object is masked from ‘package:tibble’:
+
+    data_frame
+
+i Fold01: preprocessor 1/1
+✓ Fold01: preprocessor 1/1
+i Fold01: preprocessor 1/1, model 1/30
+✓ Fold01: preprocessor 1/1, model 1/30
+i Fold01: preprocessor 1/1, model 1/30 (predictions)
+i Fold01: preprocessor 1/1, model 2/30
+✓ Fold01: preprocessor 1/1, model 2/30
+i Fold01: preprocessor 1/1, model 2/30 (predictions)
+i Fold01: preprocessor 1/1, model 3/30
+✓ Fold01: preprocessor 1/1, model 3/30
+i Fold01: preprocessor 1/1, model 3/30 (predictions)
+i Fold01: preprocessor 1/1, model 4/30
+✓ Fold01: preprocessor 1/1, model 4/30
+i Fold01: preprocessor 1/1, model 4/30 (predictions)
+i Fold01: preprocessor 1/1, model 5/30
+✓ Fold01: preprocessor 1/1, model 5/30
+i Fold01: preprocessor 1/1, model 5/30 (predictions)
+i Fold01: preprocessor 1/1, model 6/30
+✓ Fold01: preprocessor 1/1, model 6/30
+i Fold01: preprocessor 1/1, model 6/30 (predictions)
+i Fold01: preprocessor 1/1, model 7/30
+✓ Fold01: preprocessor 1/1, model 7/30
+i Fold01: preprocessor 1/1, model 7/30 (predictions)
+i Fold01: preprocessor 1/1, model 8/30
+✓ Fold01: preprocessor 1/1, model 8/30
+i Fold01: preprocessor 1/1, model 8/30 (predictions)
+i Fold01: preprocessor 1/1, model 9/30
+✓ Fold01: preprocessor 1/1, model 9/30
+i Fold01: preprocessor 1/1, model 9/30 (predictions)
+i Fold01: preprocessor 1/1, model 10/30
+✓ Fold01: preprocessor 1/1, model 10/30
+i Fold01: preprocessor 1/1, model 10/30 (predictions)
+i Fold01: preprocessor 1/1, model 11/30
+✓ Fold01: preprocessor 1/1, model 11/30
+i Fold01: preprocessor 1/1, model 11/30 (predictions)
+i Fold01: preprocessor 1/1, model 12/30
+✓ Fold01: preprocessor 1/1, model 12/30
+i Fold01: preprocessor 1/1, model 12/30 (predictions)
+i Fold01: preprocessor 1/1, model 13/30
+✓ Fold01: preprocessor 1/1, model 13/30
+i Fold01: preprocessor 1/1, model 13/30 (predictions)
+i Fold01: preprocessor 1/1, model 14/30
+✓ Fold01: preprocessor 1/1, model 14/30
+i Fold01: preprocessor 1/1, model 14/30 (predictions)
+i Fold01: preprocessor 1/1, model 15/30
+✓ Fold01: preprocessor 1/1, model 15/30
+i Fold01: preprocessor 1/1, model 15/30 (predictions)
+i Fold01: preprocessor 1/1, model 16/30
+✓ Fold01: preprocessor 1/1, model 16/30
+i Fold01: preprocessor 1/1, model 16/30 (predictions)
+i Fold01: preprocessor 1/1, model 17/30
+✓ Fold01: preprocessor 1/1, model 17/30
+i Fold01: preprocessor 1/1, model 17/30 (predictions)
+i Fold01: preprocessor 1/1, model 18/30
+✓ Fold01: preprocessor 1/1, model 18/30
+i Fold01: preprocessor 1/1, model 18/30 (predictions)
+i Fold01: preprocessor 1/1, model 19/30
+✓ Fold01: preprocessor 1/1, model 19/30
+i Fold01: preprocessor 1/1, model 19/30 (predictions)
+i Fold01: preprocessor 1/1, model 20/30
+✓ Fold01: preprocessor 1/1, model 20/30
+i Fold01: preprocessor 1/1, model 20/30 (predictions)
+i Fold01: preprocessor 1/1, model 21/30
+✓ Fold01: preprocessor 1/1, model 21/30
+i Fold01: preprocessor 1/1, model 21/30 (predictions)
+i Fold01: preprocessor 1/1, model 22/30
+✓ Fold01: preprocessor 1/1, model 22/30
+i Fold01: preprocessor 1/1, model 22/30 (predictions)
+i Fold01: preprocessor 1/1, model 23/30
+✓ Fold01: preprocessor 1/1, model 23/30
+i Fold01: preprocessor 1/1, model 23/30 (predictions)
+i Fold01: preprocessor 1/1, model 24/30
+✓ Fold01: preprocessor 1/1, model 24/30
+i Fold01: preprocessor 1/1, model 24/30 (predictions)
+i Fold01: preprocessor 1/1, model 25/30
+✓ Fold01: preprocessor 1/1, model 25/30
+i Fold01: preprocessor 1/1, model 25/30 (predictions)
+i Fold01: preprocessor 1/1, model 26/30
+✓ Fold01: preprocessor 1/1, model 26/30
+i Fold01: preprocessor 1/1, model 26/30 (predictions)
+i Fold01: preprocessor 1/1, model 27/30
+✓ Fold01: preprocessor 1/1, model 27/30
+i Fold01: preprocessor 1/1, model 27/30 (predictions)
+i Fold01: preprocessor 1/1, model 28/30
+✓ Fold01: preprocessor 1/1, model 28/30
+i Fold01: preprocessor 1/1, model 28/30 (predictions)
+i Fold01: preprocessor 1/1, model 29/30
+✓ Fold01: preprocessor 1/1, model 29/30
+i Fold01: preprocessor 1/1, model 29/30 (predictions)
+i Fold01: preprocessor 1/1, model 30/30
+✓ Fold01: preprocessor 1/1, model 30/30
+i Fold01: preprocessor 1/1, model 30/30 (predictions)
+! Fold01: internal: A correlation computation is required, but `estimate` is const...
+✓ Fold01: internal
+i Fold02: preprocessor 1/1
+✓ Fold02: preprocessor 1/1
+i Fold02: preprocessor 1/1, model 1/30
+✓ Fold02: preprocessor 1/1, model 1/30
+i Fold02: preprocessor 1/1, model 1/30 (predictions)
+i Fold02: preprocessor 1/1, model 2/30
+✓ Fold02: preprocessor 1/1, model 2/30
+i Fold02: preprocessor 1/1, model 2/30 (predictions)
+i Fold02: preprocessor 1/1, model 3/30
+✓ Fold02: preprocessor 1/1, model 3/30
+i Fold02: preprocessor 1/1, model 3/30 (predictions)
+i Fold02: preprocessor 1/1, model 4/30
+✓ Fold02: preprocessor 1/1, model 4/30
+i Fold02: preprocessor 1/1, model 4/30 (predictions)
+i Fold02: preprocessor 1/1, model 5/30
+✓ Fold02: preprocessor 1/1, model 5/30
+i Fold02: preprocessor 1/1, model 5/30 (predictions)
+i Fold02: preprocessor 1/1, model 6/30
+✓ Fold02: preprocessor 1/1, model 6/30
+i Fold02: preprocessor 1/1, model 6/30 (predictions)
+i Fold02: preprocessor 1/1, model 7/30
+✓ Fold02: preprocessor 1/1, model 7/30
+i Fold02: preprocessor 1/1, model 7/30 (predictions)
+i Fold02: preprocessor 1/1, model 8/30
+✓ Fold02: preprocessor 1/1, model 8/30
+i Fold02: preprocessor 1/1, model 8/30 (predictions)
+i Fold02: preprocessor 1/1, model 9/30
+✓ Fold02: preprocessor 1/1, model 9/30
+i Fold02: preprocessor 1/1, model 9/30 (predictions)
+i Fold02: preprocessor 1/1, model 10/30
+✓ Fold02: preprocessor 1/1, model 10/30
+i Fold02: preprocessor 1/1, model 10/30 (predictions)
+i Fold02: preprocessor 1/1, model 11/30
+✓ Fold02: preprocessor 1/1, model 11/30
+i Fold02: preprocessor 1/1, model 11/30 (predictions)
+i Fold02: preprocessor 1/1, model 12/30
+✓ Fold02: preprocessor 1/1, model 12/30
+i Fold02: preprocessor 1/1, model 12/30 (predictions)
+i Fold02: preprocessor 1/1, model 13/30
+✓ Fold02: preprocessor 1/1, model 13/30
+i Fold02: preprocessor 1/1, model 13/30 (predictions)
+i Fold02: preprocessor 1/1, model 14/30
+✓ Fold02: preprocessor 1/1, model 14/30
+i Fold02: preprocessor 1/1, model 14/30 (predictions)
+i Fold02: preprocessor 1/1, model 15/30
+✓ Fold02: preprocessor 1/1, model 15/30
+i Fold02: preprocessor 1/1, model 15/30 (predictions)
+i Fold02: preprocessor 1/1, model 16/30
+✓ Fold02: preprocessor 1/1, model 16/30
+i Fold02: preprocessor 1/1, model 16/30 (predictions)
+i Fold02: preprocessor 1/1, model 17/30
+✓ Fold02: preprocessor 1/1, model 17/30
+i Fold02: preprocessor 1/1, model 17/30 (predictions)
+i Fold02: preprocessor 1/1, model 18/30
+✓ Fold02: preprocessor 1/1, model 18/30
+i Fold02: preprocessor 1/1, model 18/30 (predictions)
+i Fold02: preprocessor 1/1, model 19/30
+✓ Fold02: preprocessor 1/1, model 19/30
+i Fold02: preprocessor 1/1, model 19/30 (predictions)
+i Fold02: preprocessor 1/1, model 20/30
+✓ Fold02: preprocessor 1/1, model 20/30
+i Fold02: preprocessor 1/1, model 20/30 (predictions)
+i Fold02: preprocessor 1/1, model 21/30
+✓ Fold02: preprocessor 1/1, model 21/30
+i Fold02: preprocessor 1/1, model 21/30 (predictions)
+i Fold02: preprocessor 1/1, model 22/30
+✓ Fold02: preprocessor 1/1, model 22/30
+i Fold02: preprocessor 1/1, model 22/30 (predictions)
+i Fold02: preprocessor 1/1, model 23/30
+✓ Fold02: preprocessor 1/1, model 23/30
+i Fold02: preprocessor 1/1, model 23/30 (predictions)
+i Fold02: preprocessor 1/1, model 24/30
+✓ Fold02: preprocessor 1/1, model 24/30
+i Fold02: preprocessor 1/1, model 24/30 (predictions)
+i Fold02: preprocessor 1/1, model 25/30
+✓ Fold02: preprocessor 1/1, model 25/30
+i Fold02: preprocessor 1/1, model 25/30 (predictions)
+i Fold02: preprocessor 1/1, model 26/30
+✓ Fold02: preprocessor 1/1, model 26/30
+i Fold02: preprocessor 1/1, model 26/30 (predictions)
+i Fold02: preprocessor 1/1, model 27/30
+✓ Fold02: preprocessor 1/1, model 27/30
+i Fold02: preprocessor 1/1, model 27/30 (predictions)
+i Fold02: preprocessor 1/1, model 28/30
+✓ Fold02: preprocessor 1/1, model 28/30
+i Fold02: preprocessor 1/1, model 28/30 (predictions)
+i Fold02: preprocessor 1/1, model 29/30
+✓ Fold02: preprocessor 1/1, model 29/30
+i Fold02: preprocessor 1/1, model 29/30 (predictions)
+i Fold02: preprocessor 1/1, model 30/30
+✓ Fold02: preprocessor 1/1, model 30/30
+i Fold02: preprocessor 1/1, model 30/30 (predictions)
+! Fold02: internal: A correlation computation is required, but `estimate` is const...
+✓ Fold02: internal
+i Fold03: preprocessor 1/1
+✓ Fold03: preprocessor 1/1
+i Fold03: preprocessor 1/1, model 1/30
+✓ Fold03: preprocessor 1/1, model 1/30
+i Fold03: preprocessor 1/1, model 1/30 (predictions)
+i Fold03: preprocessor 1/1, model 2/30
+✓ Fold03: preprocessor 1/1, model 2/30
+i Fold03: preprocessor 1/1, model 2/30 (predictions)
+i Fold03: preprocessor 1/1, model 3/30
+✓ Fold03: preprocessor 1/1, model 3/30
+i Fold03: preprocessor 1/1, model 3/30 (predictions)
+i Fold03: preprocessor 1/1, model 4/30
+✓ Fold03: preprocessor 1/1, model 4/30
+i Fold03: preprocessor 1/1, model 4/30 (predictions)
+i Fold03: preprocessor 1/1, model 5/30
+✓ Fold03: preprocessor 1/1, model 5/30
+i Fold03: preprocessor 1/1, model 5/30 (predictions)
+i Fold03: preprocessor 1/1, model 6/30
+✓ Fold03: preprocessor 1/1, model 6/30
+i Fold03: preprocessor 1/1, model 6/30 (predictions)
+i Fold03: preprocessor 1/1, model 7/30
+✓ Fold03: preprocessor 1/1, model 7/30
+i Fold03: preprocessor 1/1, model 7/30 (predictions)
+i Fold03: preprocessor 1/1, model 8/30
+✓ Fold03: preprocessor 1/1, model 8/30
+i Fold03: preprocessor 1/1, model 8/30 (predictions)
+i Fold03: preprocessor 1/1, model 9/30
+✓ Fold03: preprocessor 1/1, model 9/30
+i Fold03: preprocessor 1/1, model 9/30 (predictions)
+i Fold03: preprocessor 1/1, model 10/30
+✓ Fold03: preprocessor 1/1, model 10/30
+i Fold03: preprocessor 1/1, model 10/30 (predictions)
+i Fold03: preprocessor 1/1, model 11/30
+✓ Fold03: preprocessor 1/1, model 11/30
+i Fold03: preprocessor 1/1, model 11/30 (predictions)
+i Fold03: preprocessor 1/1, model 12/30
+✓ Fold03: preprocessor 1/1, model 12/30
+i Fold03: preprocessor 1/1, model 12/30 (predictions)
+i Fold03: preprocessor 1/1, model 13/30
+✓ Fold03: preprocessor 1/1, model 13/30
+i Fold03: preprocessor 1/1, model 13/30 (predictions)
+i Fold03: preprocessor 1/1, model 14/30
+✓ Fold03: preprocessor 1/1, model 14/30
+i Fold03: preprocessor 1/1, model 14/30 (predictions)
+i Fold03: preprocessor 1/1, model 15/30
+✓ Fold03: preprocessor 1/1, model 15/30
+i Fold03: preprocessor 1/1, model 15/30 (predictions)
+i Fold03: preprocessor 1/1, model 16/30
+✓ Fold03: preprocessor 1/1, model 16/30
+i Fold03: preprocessor 1/1, model 16/30 (predictions)
+i Fold03: preprocessor 1/1, model 17/30
+✓ Fold03: preprocessor 1/1, model 17/30
+i Fold03: preprocessor 1/1, model 17/30 (predictions)
+i Fold03: preprocessor 1/1, model 18/30
+✓ Fold03: preprocessor 1/1, model 18/30
+i Fold03: preprocessor 1/1, model 18/30 (predictions)
+i Fold03: preprocessor 1/1, model 19/30
+✓ Fold03: preprocessor 1/1, model 19/30
+i Fold03: preprocessor 1/1, model 19/30 (predictions)
+i Fold03: preprocessor 1/1, model 20/30
+✓ Fold03: preprocessor 1/1, model 20/30
+i Fold03: preprocessor 1/1, model 20/30 (predictions)
+i Fold03: preprocessor 1/1, model 21/30
+✓ Fold03: preprocessor 1/1, model 21/30
+i Fold03: preprocessor 1/1, model 21/30 (predictions)
+i Fold03: preprocessor 1/1, model 22/30
+✓ Fold03: preprocessor 1/1, model 22/30
+i Fold03: preprocessor 1/1, model 22/30 (predictions)
+i Fold03: preprocessor 1/1, model 23/30
+✓ Fold03: preprocessor 1/1, model 23/30
+i Fold03: preprocessor 1/1, model 23/30 (predictions)
+i Fold03: preprocessor 1/1, model 24/30
+✓ Fold03: preprocessor 1/1, model 24/30
+i Fold03: preprocessor 1/1, model 24/30 (predictions)
+i Fold03: preprocessor 1/1, model 25/30
+✓ Fold03: preprocessor 1/1, model 25/30
+i Fold03: preprocessor 1/1, model 25/30 (predictions)
+i Fold03: preprocessor 1/1, model 26/30
+✓ Fold03: preprocessor 1/1, model 26/30
+i Fold03: preprocessor 1/1, model 26/30 (predictions)
+i Fold03: preprocessor 1/1, model 27/30
+✓ Fold03: preprocessor 1/1, model 27/30
+i Fold03: preprocessor 1/1, model 27/30 (predictions)
+i Fold03: preprocessor 1/1, model 28/30
+✓ Fold03: preprocessor 1/1, model 28/30
+i Fold03: preprocessor 1/1, model 28/30 (predictions)
+i Fold03: preprocessor 1/1, model 29/30
+✓ Fold03: preprocessor 1/1, model 29/30
+i Fold03: preprocessor 1/1, model 29/30 (predictions)
+i Fold03: preprocessor 1/1, model 30/30
+✓ Fold03: preprocessor 1/1, model 30/30
+i Fold03: preprocessor 1/1, model 30/30 (predictions)
+! Fold03: internal: A correlation computation is required, but `estimate` is const...
+✓ Fold03: internal
+i Fold04: preprocessor 1/1
+✓ Fold04: preprocessor 1/1
+i Fold04: preprocessor 1/1, model 1/30
+✓ Fold04: preprocessor 1/1, model 1/30
+i Fold04: preprocessor 1/1, model 1/30 (predictions)
+i Fold04: preprocessor 1/1, model 2/30
+✓ Fold04: preprocessor 1/1, model 2/30
+i Fold04: preprocessor 1/1, model 2/30 (predictions)
+i Fold04: preprocessor 1/1, model 3/30
+✓ Fold04: preprocessor 1/1, model 3/30
+i Fold04: preprocessor 1/1, model 3/30 (predictions)
+i Fold04: preprocessor 1/1, model 4/30
+✓ Fold04: preprocessor 1/1, model 4/30
+i Fold04: preprocessor 1/1, model 4/30 (predictions)
+i Fold04: preprocessor 1/1, model 5/30
+✓ Fold04: preprocessor 1/1, model 5/30
+i Fold04: preprocessor 1/1, model 5/30 (predictions)
+i Fold04: preprocessor 1/1, model 6/30
+✓ Fold04: preprocessor 1/1, model 6/30
+i Fold04: preprocessor 1/1, model 6/30 (predictions)
+i Fold04: preprocessor 1/1, model 7/30
+✓ Fold04: preprocessor 1/1, model 7/30
+i Fold04: preprocessor 1/1, model 7/30 (predictions)
+i Fold04: preprocessor 1/1, model 8/30
+✓ Fold04: preprocessor 1/1, model 8/30
+i Fold04: preprocessor 1/1, model 8/30 (predictions)
+i Fold04: preprocessor 1/1, model 9/30
+✓ Fold04: preprocessor 1/1, model 9/30
+i Fold04: preprocessor 1/1, model 9/30 (predictions)
+i Fold04: preprocessor 1/1, model 10/30
+✓ Fold04: preprocessor 1/1, model 10/30
+i Fold04: preprocessor 1/1, model 10/30 (predictions)
+i Fold04: preprocessor 1/1, model 11/30
+✓ Fold04: preprocessor 1/1, model 11/30
+i Fold04: preprocessor 1/1, model 11/30 (predictions)
+i Fold04: preprocessor 1/1, model 12/30
+✓ Fold04: preprocessor 1/1, model 12/30
+i Fold04: preprocessor 1/1, model 12/30 (predictions)
+i Fold04: preprocessor 1/1, model 13/30
+✓ Fold04: preprocessor 1/1, model 13/30
+i Fold04: preprocessor 1/1, model 13/30 (predictions)
+i Fold04: preprocessor 1/1, model 14/30
+✓ Fold04: preprocessor 1/1, model 14/30
+i Fold04: preprocessor 1/1, model 14/30 (predictions)
+i Fold04: preprocessor 1/1, model 15/30
+✓ Fold04: preprocessor 1/1, model 15/30
+i Fold04: preprocessor 1/1, model 15/30 (predictions)
+i Fold04: preprocessor 1/1, model 16/30
+✓ Fold04: preprocessor 1/1, model 16/30
+i Fold04: preprocessor 1/1, model 16/30 (predictions)
+i Fold04: preprocessor 1/1, model 17/30
+✓ Fold04: preprocessor 1/1, model 17/30
+i Fold04: preprocessor 1/1, model 17/30 (predictions)
+i Fold04: preprocessor 1/1, model 18/30
+✓ Fold04: preprocessor 1/1, model 18/30
+i Fold04: preprocessor 1/1, model 18/30 (predictions)
+i Fold04: preprocessor 1/1, model 19/30
+✓ Fold04: preprocessor 1/1, model 19/30
+i Fold04: preprocessor 1/1, model 19/30 (predictions)
+i Fold04: preprocessor 1/1, model 20/30
+✓ Fold04: preprocessor 1/1, model 20/30
+i Fold04: preprocessor 1/1, model 20/30 (predictions)
+i Fold04: preprocessor 1/1, model 21/30
+✓ Fold04: preprocessor 1/1, model 21/30
+i Fold04: preprocessor 1/1, model 21/30 (predictions)
+i Fold04: preprocessor 1/1, model 22/30
+✓ Fold04: preprocessor 1/1, model 22/30
+i Fold04: preprocessor 1/1, model 22/30 (predictions)
+i Fold04: preprocessor 1/1, model 23/30
+✓ Fold04: preprocessor 1/1, model 23/30
+i Fold04: preprocessor 1/1, model 23/30 (predictions)
+i Fold04: preprocessor 1/1, model 24/30
+✓ Fold04: preprocessor 1/1, model 24/30
+i Fold04: preprocessor 1/1, model 24/30 (predictions)
+i Fold04: preprocessor 1/1, model 25/30
+✓ Fold04: preprocessor 1/1, model 25/30
+i Fold04: preprocessor 1/1, model 25/30 (predictions)
+i Fold04: preprocessor 1/1, model 26/30
+✓ Fold04: preprocessor 1/1, model 26/30
+i Fold04: preprocessor 1/1, model 26/30 (predictions)
+i Fold04: preprocessor 1/1, model 27/30
+✓ Fold04: preprocessor 1/1, model 27/30
+i Fold04: preprocessor 1/1, model 27/30 (predictions)
+i Fold04: preprocessor 1/1, model 28/30
+✓ Fold04: preprocessor 1/1, model 28/30
+i Fold04: preprocessor 1/1, model 28/30 (predictions)
+i Fold04: preprocessor 1/1, model 29/30
+✓ Fold04: preprocessor 1/1, model 29/30
+i Fold04: preprocessor 1/1, model 29/30 (predictions)
+i Fold04: preprocessor 1/1, model 30/30
+✓ Fold04: preprocessor 1/1, model 30/30
+i Fold04: preprocessor 1/1, model 30/30 (predictions)
+! Fold04: internal: A correlation computation is required, but `estimate` is const...
+✓ Fold04: internal
+i Fold05: preprocessor 1/1
+✓ Fold05: preprocessor 1/1
+i Fold05: preprocessor 1/1, model 1/30
+✓ Fold05: preprocessor 1/1, model 1/30
+i Fold05: preprocessor 1/1, model 1/30 (predictions)
+i Fold05: preprocessor 1/1, model 2/30
+✓ Fold05: preprocessor 1/1, model 2/30
+i Fold05: preprocessor 1/1, model 2/30 (predictions)
+i Fold05: preprocessor 1/1, model 3/30
+✓ Fold05: preprocessor 1/1, model 3/30
+i Fold05: preprocessor 1/1, model 3/30 (predictions)
+i Fold05: preprocessor 1/1, model 4/30
+✓ Fold05: preprocessor 1/1, model 4/30
+i Fold05: preprocessor 1/1, model 4/30 (predictions)
+i Fold05: preprocessor 1/1, model 5/30
+✓ Fold05: preprocessor 1/1, model 5/30
+i Fold05: preprocessor 1/1, model 5/30 (predictions)
+i Fold05: preprocessor 1/1, model 6/30
+✓ Fold05: preprocessor 1/1, model 6/30
+i Fold05: preprocessor 1/1, model 6/30 (predictions)
+i Fold05: preprocessor 1/1, model 7/30
+✓ Fold05: preprocessor 1/1, model 7/30
+i Fold05: preprocessor 1/1, model 7/30 (predictions)
+i Fold05: preprocessor 1/1, model 8/30
+✓ Fold05: preprocessor 1/1, model 8/30
+i Fold05: preprocessor 1/1, model 8/30 (predictions)
+i Fold05: preprocessor 1/1, model 9/30
+✓ Fold05: preprocessor 1/1, model 9/30
+i Fold05: preprocessor 1/1, model 9/30 (predictions)
+i Fold05: preprocessor 1/1, model 10/30
+✓ Fold05: preprocessor 1/1, model 10/30
+i Fold05: preprocessor 1/1, model 10/30 (predictions)
+i Fold05: preprocessor 1/1, model 11/30
+✓ Fold05: preprocessor 1/1, model 11/30
+i Fold05: preprocessor 1/1, model 11/30 (predictions)
+i Fold05: preprocessor 1/1, model 12/30
+✓ Fold05: preprocessor 1/1, model 12/30
+i Fold05: preprocessor 1/1, model 12/30 (predictions)
+i Fold05: preprocessor 1/1, model 13/30
+✓ Fold05: preprocessor 1/1, model 13/30
+i Fold05: preprocessor 1/1, model 13/30 (predictions)
+i Fold05: preprocessor 1/1, model 14/30
+✓ Fold05: preprocessor 1/1, model 14/30
+i Fold05: preprocessor 1/1, model 14/30 (predictions)
+i Fold05: preprocessor 1/1, model 15/30
+✓ Fold05: preprocessor 1/1, model 15/30
+i Fold05: preprocessor 1/1, model 15/30 (predictions)
+i Fold05: preprocessor 1/1, model 16/30
+✓ Fold05: preprocessor 1/1, model 16/30
+i Fold05: preprocessor 1/1, model 16/30 (predictions)
+i Fold05: preprocessor 1/1, model 17/30
+✓ Fold05: preprocessor 1/1, model 17/30
+i Fold05: preprocessor 1/1, model 17/30 (predictions)
+i Fold05: preprocessor 1/1, model 18/30
+✓ Fold05: preprocessor 1/1, model 18/30
+i Fold05: preprocessor 1/1, model 18/30 (predictions)
+i Fold05: preprocessor 1/1, model 19/30
+✓ Fold05: preprocessor 1/1, model 19/30
+i Fold05: preprocessor 1/1, model 19/30 (predictions)
+i Fold05: preprocessor 1/1, model 20/30
+✓ Fold05: preprocessor 1/1, model 20/30
+i Fold05: preprocessor 1/1, model 20/30 (predictions)
+i Fold05: preprocessor 1/1, model 21/30
+✓ Fold05: preprocessor 1/1, model 21/30
+i Fold05: preprocessor 1/1, model 21/30 (predictions)
+i Fold05: preprocessor 1/1, model 22/30
+✓ Fold05: preprocessor 1/1, model 22/30
+i Fold05: preprocessor 1/1, model 22/30 (predictions)
+i Fold05: preprocessor 1/1, model 23/30
+✓ Fold05: preprocessor 1/1, model 23/30
+i Fold05: preprocessor 1/1, model 23/30 (predictions)
+i Fold05: preprocessor 1/1, model 24/30
+✓ Fold05: preprocessor 1/1, model 24/30
+i Fold05: preprocessor 1/1, model 24/30 (predictions)
+i Fold05: preprocessor 1/1, model 25/30
+✓ Fold05: preprocessor 1/1, model 25/30
+i Fold05: preprocessor 1/1, model 25/30 (predictions)
+i Fold05: preprocessor 1/1, model 26/30
+✓ Fold05: preprocessor 1/1, model 26/30
+i Fold05: preprocessor 1/1, model 26/30 (predictions)
+i Fold05: preprocessor 1/1, model 27/30
+✓ Fold05: preprocessor 1/1, model 27/30
+i Fold05: preprocessor 1/1, model 27/30 (predictions)
+i Fold05: preprocessor 1/1, model 28/30
+✓ Fold05: preprocessor 1/1, model 28/30
+i Fold05: preprocessor 1/1, model 28/30 (predictions)
+i Fold05: preprocessor 1/1, model 29/30
+✓ Fold05: preprocessor 1/1, model 29/30
+i Fold05: preprocessor 1/1, model 29/30 (predictions)
+i Fold05: preprocessor 1/1, model 30/30
+✓ Fold05: preprocessor 1/1, model 30/30
+i Fold05: preprocessor 1/1, model 30/30 (predictions)
+! Fold05: internal: A correlation computation is required, but `estimate` is const...
+✓ Fold05: internal
+i Fold06: preprocessor 1/1
+✓ Fold06: preprocessor 1/1
+i Fold06: preprocessor 1/1, model 1/30
+✓ Fold06: preprocessor 1/1, model 1/30
+i Fold06: preprocessor 1/1, model 1/30 (predictions)
+i Fold06: preprocessor 1/1, model 2/30
+✓ Fold06: preprocessor 1/1, model 2/30
+i Fold06: preprocessor 1/1, model 2/30 (predictions)
+i Fold06: preprocessor 1/1, model 3/30
+✓ Fold06: preprocessor 1/1, model 3/30
+i Fold06: preprocessor 1/1, model 3/30 (predictions)
+i Fold06: preprocessor 1/1, model 4/30
+✓ Fold06: preprocessor 1/1, model 4/30
+i Fold06: preprocessor 1/1, model 4/30 (predictions)
+i Fold06: preprocessor 1/1, model 5/30
+✓ Fold06: preprocessor 1/1, model 5/30
+i Fold06: preprocessor 1/1, model 5/30 (predictions)
+i Fold06: preprocessor 1/1, model 6/30
+✓ Fold06: preprocessor 1/1, model 6/30
+i Fold06: preprocessor 1/1, model 6/30 (predictions)
+i Fold06: preprocessor 1/1, model 7/30
+✓ Fold06: preprocessor 1/1, model 7/30
+i Fold06: preprocessor 1/1, model 7/30 (predictions)
+i Fold06: preprocessor 1/1, model 8/30
+✓ Fold06: preprocessor 1/1, model 8/30
+i Fold06: preprocessor 1/1, model 8/30 (predictions)
+i Fold06: preprocessor 1/1, model 9/30
+✓ Fold06: preprocessor 1/1, model 9/30
+i Fold06: preprocessor 1/1, model 9/30 (predictions)
+i Fold06: preprocessor 1/1, model 10/30
+✓ Fold06: preprocessor 1/1, model 10/30
+i Fold06: preprocessor 1/1, model 10/30 (predictions)
+i Fold06: preprocessor 1/1, model 11/30
+✓ Fold06: preprocessor 1/1, model 11/30
+i Fold06: preprocessor 1/1, model 11/30 (predictions)
+i Fold06: preprocessor 1/1, model 12/30
+✓ Fold06: preprocessor 1/1, model 12/30
+i Fold06: preprocessor 1/1, model 12/30 (predictions)
+i Fold06: preprocessor 1/1, model 13/30
+✓ Fold06: preprocessor 1/1, model 13/30
+i Fold06: preprocessor 1/1, model 13/30 (predictions)
+i Fold06: preprocessor 1/1, model 14/30
+✓ Fold06: preprocessor 1/1, model 14/30
+i Fold06: preprocessor 1/1, model 14/30 (predictions)
+i Fold06: preprocessor 1/1, model 15/30
+✓ Fold06: preprocessor 1/1, model 15/30
+i Fold06: preprocessor 1/1, model 15/30 (predictions)
+i Fold06: preprocessor 1/1, model 16/30
+✓ Fold06: preprocessor 1/1, model 16/30
+i Fold06: preprocessor 1/1, model 16/30 (predictions)
+i Fold06: preprocessor 1/1, model 17/30
+✓ Fold06: preprocessor 1/1, model 17/30
+i Fold06: preprocessor 1/1, model 17/30 (predictions)
+i Fold06: preprocessor 1/1, model 18/30
+✓ Fold06: preprocessor 1/1, model 18/30
+i Fold06: preprocessor 1/1, model 18/30 (predictions)
+i Fold06: preprocessor 1/1, model 19/30
+✓ Fold06: preprocessor 1/1, model 19/30
+i Fold06: preprocessor 1/1, model 19/30 (predictions)
+i Fold06: preprocessor 1/1, model 20/30
+✓ Fold06: preprocessor 1/1, model 20/30
+i Fold06: preprocessor 1/1, model 20/30 (predictions)
+i Fold06: preprocessor 1/1, model 21/30
+✓ Fold06: preprocessor 1/1, model 21/30
+i Fold06: preprocessor 1/1, model 21/30 (predictions)
+i Fold06: preprocessor 1/1, model 22/30
+✓ Fold06: preprocessor 1/1, model 22/30
+i Fold06: preprocessor 1/1, model 22/30 (predictions)
+i Fold06: preprocessor 1/1, model 23/30
+✓ Fold06: preprocessor 1/1, model 23/30
+i Fold06: preprocessor 1/1, model 23/30 (predictions)
+i Fold06: preprocessor 1/1, model 24/30
+✓ Fold06: preprocessor 1/1, model 24/30
+i Fold06: preprocessor 1/1, model 24/30 (predictions)
+i Fold06: preprocessor 1/1, model 25/30
+✓ Fold06: preprocessor 1/1, model 25/30
+i Fold06: preprocessor 1/1, model 25/30 (predictions)
+i Fold06: preprocessor 1/1, model 26/30
+✓ Fold06: preprocessor 1/1, model 26/30
+i Fold06: preprocessor 1/1, model 26/30 (predictions)
+i Fold06: preprocessor 1/1, model 27/30
+✓ Fold06: preprocessor 1/1, model 27/30
+i Fold06: preprocessor 1/1, model 27/30 (predictions)
+i Fold06: preprocessor 1/1, model 28/30
+✓ Fold06: preprocessor 1/1, model 28/30
+i Fold06: preprocessor 1/1, model 28/30 (predictions)
+i Fold06: preprocessor 1/1, model 29/30
+✓ Fold06: preprocessor 1/1, model 29/30
+i Fold06: preprocessor 1/1, model 29/30 (predictions)
+i Fold06: preprocessor 1/1, model 30/30
+✓ Fold06: preprocessor 1/1, model 30/30
+i Fold06: preprocessor 1/1, model 30/30 (predictions)
+! Fold06: internal: A correlation computation is required, but `estimate` is const...
+✓ Fold06: internal
+i Fold07: preprocessor 1/1
+✓ Fold07: preprocessor 1/1
+i Fold07: preprocessor 1/1, model 1/30
+✓ Fold07: preprocessor 1/1, model 1/30
+i Fold07: preprocessor 1/1, model 1/30 (predictions)
+i Fold07: preprocessor 1/1, model 2/30
+✓ Fold07: preprocessor 1/1, model 2/30
+i Fold07: preprocessor 1/1, model 2/30 (predictions)
+i Fold07: preprocessor 1/1, model 3/30
+✓ Fold07: preprocessor 1/1, model 3/30
+i Fold07: preprocessor 1/1, model 3/30 (predictions)
+i Fold07: preprocessor 1/1, model 4/30
+✓ Fold07: preprocessor 1/1, model 4/30
+i Fold07: preprocessor 1/1, model 4/30 (predictions)
+i Fold07: preprocessor 1/1, model 5/30
+✓ Fold07: preprocessor 1/1, model 5/30
+i Fold07: preprocessor 1/1, model 5/30 (predictions)
+i Fold07: preprocessor 1/1, model 6/30
+✓ Fold07: preprocessor 1/1, model 6/30
+i Fold07: preprocessor 1/1, model 6/30 (predictions)
+i Fold07: preprocessor 1/1, model 7/30
+✓ Fold07: preprocessor 1/1, model 7/30
+i Fold07: preprocessor 1/1, model 7/30 (predictions)
+i Fold07: preprocessor 1/1, model 8/30
+✓ Fold07: preprocessor 1/1, model 8/30
+i Fold07: preprocessor 1/1, model 8/30 (predictions)
+i Fold07: preprocessor 1/1, model 9/30
+✓ Fold07: preprocessor 1/1, model 9/30
+i Fold07: preprocessor 1/1, model 9/30 (predictions)
+i Fold07: preprocessor 1/1, model 10/30
+✓ Fold07: preprocessor 1/1, model 10/30
+i Fold07: preprocessor 1/1, model 10/30 (predictions)
+i Fold07: preprocessor 1/1, model 11/30
+✓ Fold07: preprocessor 1/1, model 11/30
+i Fold07: preprocessor 1/1, model 11/30 (predictions)
+i Fold07: preprocessor 1/1, model 12/30
+✓ Fold07: preprocessor 1/1, model 12/30
+i Fold07: preprocessor 1/1, model 12/30 (predictions)
+i Fold07: preprocessor 1/1, model 13/30
+✓ Fold07: preprocessor 1/1, model 13/30
+i Fold07: preprocessor 1/1, model 13/30 (predictions)
+i Fold07: preprocessor 1/1, model 14/30
+✓ Fold07: preprocessor 1/1, model 14/30
+i Fold07: preprocessor 1/1, model 14/30 (predictions)
+i Fold07: preprocessor 1/1, model 15/30
+✓ Fold07: preprocessor 1/1, model 15/30
+i Fold07: preprocessor 1/1, model 15/30 (predictions)
+i Fold07: preprocessor 1/1, model 16/30
+✓ Fold07: preprocessor 1/1, model 16/30
+i Fold07: preprocessor 1/1, model 16/30 (predictions)
+i Fold07: preprocessor 1/1, model 17/30
+✓ Fold07: preprocessor 1/1, model 17/30
+i Fold07: preprocessor 1/1, model 17/30 (predictions)
+i Fold07: preprocessor 1/1, model 18/30
+✓ Fold07: preprocessor 1/1, model 18/30
+i Fold07: preprocessor 1/1, model 18/30 (predictions)
+i Fold07: preprocessor 1/1, model 19/30
+✓ Fold07: preprocessor 1/1, model 19/30
+i Fold07: preprocessor 1/1, model 19/30 (predictions)
+i Fold07: preprocessor 1/1, model 20/30
+✓ Fold07: preprocessor 1/1, model 20/30
+i Fold07: preprocessor 1/1, model 20/30 (predictions)
+i Fold07: preprocessor 1/1, model 21/30
+✓ Fold07: preprocessor 1/1, model 21/30
+i Fold07: preprocessor 1/1, model 21/30 (predictions)
+i Fold07: preprocessor 1/1, model 22/30
+✓ Fold07: preprocessor 1/1, model 22/30
+i Fold07: preprocessor 1/1, model 22/30 (predictions)
+i Fold07: preprocessor 1/1, model 23/30
+✓ Fold07: preprocessor 1/1, model 23/30
+i Fold07: preprocessor 1/1, model 23/30 (predictions)
+i Fold07: preprocessor 1/1, model 24/30
+✓ Fold07: preprocessor 1/1, model 24/30
+i Fold07: preprocessor 1/1, model 24/30 (predictions)
+i Fold07: preprocessor 1/1, model 25/30
+✓ Fold07: preprocessor 1/1, model 25/30
+i Fold07: preprocessor 1/1, model 25/30 (predictions)
+i Fold07: preprocessor 1/1, model 26/30
+✓ Fold07: preprocessor 1/1, model 26/30
+i Fold07: preprocessor 1/1, model 26/30 (predictions)
+i Fold07: preprocessor 1/1, model 27/30
+✓ Fold07: preprocessor 1/1, model 27/30
+i Fold07: preprocessor 1/1, model 27/30 (predictions)
+i Fold07: preprocessor 1/1, model 28/30
+✓ Fold07: preprocessor 1/1, model 28/30
+i Fold07: preprocessor 1/1, model 28/30 (predictions)
+i Fold07: preprocessor 1/1, model 29/30
+✓ Fold07: preprocessor 1/1, model 29/30
+i Fold07: preprocessor 1/1, model 29/30 (predictions)
+i Fold07: preprocessor 1/1, model 30/30
+✓ Fold07: preprocessor 1/1, model 30/30
+i Fold07: preprocessor 1/1, model 30/30 (predictions)
+! Fold07: internal: A correlation computation is required, but `estimate` is const...
+✓ Fold07: internal
+i Fold08: preprocessor 1/1
+✓ Fold08: preprocessor 1/1
+i Fold08: preprocessor 1/1, model 1/30
+✓ Fold08: preprocessor 1/1, model 1/30
+i Fold08: preprocessor 1/1, model 1/30 (predictions)
+i Fold08: preprocessor 1/1, model 2/30
+✓ Fold08: preprocessor 1/1, model 2/30
+i Fold08: preprocessor 1/1, model 2/30 (predictions)
+i Fold08: preprocessor 1/1, model 3/30
+✓ Fold08: preprocessor 1/1, model 3/30
+i Fold08: preprocessor 1/1, model 3/30 (predictions)
+i Fold08: preprocessor 1/1, model 4/30
+✓ Fold08: preprocessor 1/1, model 4/30
+i Fold08: preprocessor 1/1, model 4/30 (predictions)
+i Fold08: preprocessor 1/1, model 5/30
+✓ Fold08: preprocessor 1/1, model 5/30
+i Fold08: preprocessor 1/1, model 5/30 (predictions)
+i Fold08: preprocessor 1/1, model 6/30
+✓ Fold08: preprocessor 1/1, model 6/30
+i Fold08: preprocessor 1/1, model 6/30 (predictions)
+i Fold08: preprocessor 1/1, model 7/30
+✓ Fold08: preprocessor 1/1, model 7/30
+i Fold08: preprocessor 1/1, model 7/30 (predictions)
+i Fold08: preprocessor 1/1, model 8/30
+✓ Fold08: preprocessor 1/1, model 8/30
+i Fold08: preprocessor 1/1, model 8/30 (predictions)
+i Fold08: preprocessor 1/1, model 9/30
+✓ Fold08: preprocessor 1/1, model 9/30
+i Fold08: preprocessor 1/1, model 9/30 (predictions)
+i Fold08: preprocessor 1/1, model 10/30
+✓ Fold08: preprocessor 1/1, model 10/30
+i Fold08: preprocessor 1/1, model 10/30 (predictions)
+i Fold08: preprocessor 1/1, model 11/30
+✓ Fold08: preprocessor 1/1, model 11/30
+i Fold08: preprocessor 1/1, model 11/30 (predictions)
+i Fold08: preprocessor 1/1, model 12/30
+✓ Fold08: preprocessor 1/1, model 12/30
+i Fold08: preprocessor 1/1, model 12/30 (predictions)
+i Fold08: preprocessor 1/1, model 13/30
+✓ Fold08: preprocessor 1/1, model 13/30
+i Fold08: preprocessor 1/1, model 13/30 (predictions)
+i Fold08: preprocessor 1/1, model 14/30
+✓ Fold08: preprocessor 1/1, model 14/30
+i Fold08: preprocessor 1/1, model 14/30 (predictions)
+i Fold08: preprocessor 1/1, model 15/30
+✓ Fold08: preprocessor 1/1, model 15/30
+i Fold08: preprocessor 1/1, model 15/30 (predictions)
+i Fold08: preprocessor 1/1, model 16/30
+✓ Fold08: preprocessor 1/1, model 16/30
+i Fold08: preprocessor 1/1, model 16/30 (predictions)
+i Fold08: preprocessor 1/1, model 17/30
+✓ Fold08: preprocessor 1/1, model 17/30
+i Fold08: preprocessor 1/1, model 17/30 (predictions)
+i Fold08: preprocessor 1/1, model 18/30
+✓ Fold08: preprocessor 1/1, model 18/30
+i Fold08: preprocessor 1/1, model 18/30 (predictions)
+i Fold08: preprocessor 1/1, model 19/30
+✓ Fold08: preprocessor 1/1, model 19/30
+i Fold08: preprocessor 1/1, model 19/30 (predictions)
+i Fold08: preprocessor 1/1, model 20/30
+✓ Fold08: preprocessor 1/1, model 20/30
+i Fold08: preprocessor 1/1, model 20/30 (predictions)
+i Fold08: preprocessor 1/1, model 21/30
+✓ Fold08: preprocessor 1/1, model 21/30
+i Fold08: preprocessor 1/1, model 21/30 (predictions)
+i Fold08: preprocessor 1/1, model 22/30
+✓ Fold08: preprocessor 1/1, model 22/30
+i Fold08: preprocessor 1/1, model 22/30 (predictions)
+i Fold08: preprocessor 1/1, model 23/30
+✓ Fold08: preprocessor 1/1, model 23/30
+i Fold08: preprocessor 1/1, model 23/30 (predictions)
+i Fold08: preprocessor 1/1, model 24/30
+✓ Fold08: preprocessor 1/1, model 24/30
+i Fold08: preprocessor 1/1, model 24/30 (predictions)
+i Fold08: preprocessor 1/1, model 25/30
+✓ Fold08: preprocessor 1/1, model 25/30
+i Fold08: preprocessor 1/1, model 25/30 (predictions)
+i Fold08: preprocessor 1/1, model 26/30
+✓ Fold08: preprocessor 1/1, model 26/30
+i Fold08: preprocessor 1/1, model 26/30 (predictions)
+i Fold08: preprocessor 1/1, model 27/30
+✓ Fold08: preprocessor 1/1, model 27/30
+i Fold08: preprocessor 1/1, model 27/30 (predictions)
+i Fold08: preprocessor 1/1, model 28/30
+✓ Fold08: preprocessor 1/1, model 28/30
+i Fold08: preprocessor 1/1, model 28/30 (predictions)
+i Fold08: preprocessor 1/1, model 29/30
+✓ Fold08: preprocessor 1/1, model 29/30
+i Fold08: preprocessor 1/1, model 29/30 (predictions)
+i Fold08: preprocessor 1/1, model 30/30
+✓ Fold08: preprocessor 1/1, model 30/30
+i Fold08: preprocessor 1/1, model 30/30 (predictions)
+! Fold08: internal: A correlation computation is required, but `estimate` is const...
+✓ Fold08: internal
+i Fold09: preprocessor 1/1
+✓ Fold09: preprocessor 1/1
+i Fold09: preprocessor 1/1, model 1/30
+✓ Fold09: preprocessor 1/1, model 1/30
+i Fold09: preprocessor 1/1, model 1/30 (predictions)
+i Fold09: preprocessor 1/1, model 2/30
+✓ Fold09: preprocessor 1/1, model 2/30
+i Fold09: preprocessor 1/1, model 2/30 (predictions)
+i Fold09: preprocessor 1/1, model 3/30
+✓ Fold09: preprocessor 1/1, model 3/30
+i Fold09: preprocessor 1/1, model 3/30 (predictions)
+i Fold09: preprocessor 1/1, model 4/30
+✓ Fold09: preprocessor 1/1, model 4/30
+i Fold09: preprocessor 1/1, model 4/30 (predictions)
+i Fold09: preprocessor 1/1, model 5/30
+✓ Fold09: preprocessor 1/1, model 5/30
+i Fold09: preprocessor 1/1, model 5/30 (predictions)
+i Fold09: preprocessor 1/1, model 6/30
+✓ Fold09: preprocessor 1/1, model 6/30
+i Fold09: preprocessor 1/1, model 6/30 (predictions)
+i Fold09: preprocessor 1/1, model 7/30
+✓ Fold09: preprocessor 1/1, model 7/30
+i Fold09: preprocessor 1/1, model 7/30 (predictions)
+i Fold09: preprocessor 1/1, model 8/30
+✓ Fold09: preprocessor 1/1, model 8/30
+i Fold09: preprocessor 1/1, model 8/30 (predictions)
+i Fold09: preprocessor 1/1, model 9/30
+✓ Fold09: preprocessor 1/1, model 9/30
+i Fold09: preprocessor 1/1, model 9/30 (predictions)
+i Fold09: preprocessor 1/1, model 10/30
+✓ Fold09: preprocessor 1/1, model 10/30
+i Fold09: preprocessor 1/1, model 10/30 (predictions)
+i Fold09: preprocessor 1/1, model 11/30
+✓ Fold09: preprocessor 1/1, model 11/30
+i Fold09: preprocessor 1/1, model 11/30 (predictions)
+i Fold09: preprocessor 1/1, model 12/30
+✓ Fold09: preprocessor 1/1, model 12/30
+i Fold09: preprocessor 1/1, model 12/30 (predictions)
+i Fold09: preprocessor 1/1, model 13/30
+✓ Fold09: preprocessor 1/1, model 13/30
+i Fold09: preprocessor 1/1, model 13/30 (predictions)
+i Fold09: preprocessor 1/1, model 14/30
+✓ Fold09: preprocessor 1/1, model 14/30
+i Fold09: preprocessor 1/1, model 14/30 (predictions)
+i Fold09: preprocessor 1/1, model 15/30
+✓ Fold09: preprocessor 1/1, model 15/30
+i Fold09: preprocessor 1/1, model 15/30 (predictions)
+i Fold09: preprocessor 1/1, model 16/30
+✓ Fold09: preprocessor 1/1, model 16/30
+i Fold09: preprocessor 1/1, model 16/30 (predictions)
+i Fold09: preprocessor 1/1, model 17/30
+✓ Fold09: preprocessor 1/1, model 17/30
+i Fold09: preprocessor 1/1, model 17/30 (predictions)
+i Fold09: preprocessor 1/1, model 18/30
+✓ Fold09: preprocessor 1/1, model 18/30
+i Fold09: preprocessor 1/1, model 18/30 (predictions)
+i Fold09: preprocessor 1/1, model 19/30
+✓ Fold09: preprocessor 1/1, model 19/30
+i Fold09: preprocessor 1/1, model 19/30 (predictions)
+i Fold09: preprocessor 1/1, model 20/30
+✓ Fold09: preprocessor 1/1, model 20/30
+i Fold09: preprocessor 1/1, model 20/30 (predictions)
+i Fold09: preprocessor 1/1, model 21/30
+✓ Fold09: preprocessor 1/1, model 21/30
+i Fold09: preprocessor 1/1, model 21/30 (predictions)
+i Fold09: preprocessor 1/1, model 22/30
+✓ Fold09: preprocessor 1/1, model 22/30
+i Fold09: preprocessor 1/1, model 22/30 (predictions)
+i Fold09: preprocessor 1/1, model 23/30
+✓ Fold09: preprocessor 1/1, model 23/30
+i Fold09: preprocessor 1/1, model 23/30 (predictions)
+i Fold09: preprocessor 1/1, model 24/30
+✓ Fold09: preprocessor 1/1, model 24/30
+i Fold09: preprocessor 1/1, model 24/30 (predictions)
+i Fold09: preprocessor 1/1, model 25/30
+✓ Fold09: preprocessor 1/1, model 25/30
+i Fold09: preprocessor 1/1, model 25/30 (predictions)
+i Fold09: preprocessor 1/1, model 26/30
+✓ Fold09: preprocessor 1/1, model 26/30
+i Fold09: preprocessor 1/1, model 26/30 (predictions)
+i Fold09: preprocessor 1/1, model 27/30
+✓ Fold09: preprocessor 1/1, model 27/30
+i Fold09: preprocessor 1/1, model 27/30 (predictions)
+i Fold09: preprocessor 1/1, model 28/30
+✓ Fold09: preprocessor 1/1, model 28/30
+i Fold09: preprocessor 1/1, model 28/30 (predictions)
+i Fold09: preprocessor 1/1, model 29/30
+✓ Fold09: preprocessor 1/1, model 29/30
+i Fold09: preprocessor 1/1, model 29/30 (predictions)
+i Fold09: preprocessor 1/1, model 30/30
+✓ Fold09: preprocessor 1/1, model 30/30
+i Fold09: preprocessor 1/1, model 30/30 (predictions)
+! Fold09: internal: A correlation computation is required, but `estimate` is const...
+✓ Fold09: internal
+i Fold10: preprocessor 1/1
+✓ Fold10: preprocessor 1/1
+i Fold10: preprocessor 1/1, model 1/30
+✓ Fold10: preprocessor 1/1, model 1/30
+i Fold10: preprocessor 1/1, model 1/30 (predictions)
+i Fold10: preprocessor 1/1, model 2/30
+✓ Fold10: preprocessor 1/1, model 2/30
+i Fold10: preprocessor 1/1, model 2/30 (predictions)
+i Fold10: preprocessor 1/1, model 3/30
+✓ Fold10: preprocessor 1/1, model 3/30
+i Fold10: preprocessor 1/1, model 3/30 (predictions)
+i Fold10: preprocessor 1/1, model 4/30
+✓ Fold10: preprocessor 1/1, model 4/30
+i Fold10: preprocessor 1/1, model 4/30 (predictions)
+i Fold10: preprocessor 1/1, model 5/30
+✓ Fold10: preprocessor 1/1, model 5/30
+i Fold10: preprocessor 1/1, model 5/30 (predictions)
+i Fold10: preprocessor 1/1, model 6/30
+✓ Fold10: preprocessor 1/1, model 6/30
+i Fold10: preprocessor 1/1, model 6/30 (predictions)
+i Fold10: preprocessor 1/1, model 7/30
+✓ Fold10: preprocessor 1/1, model 7/30
+i Fold10: preprocessor 1/1, model 7/30 (predictions)
+i Fold10: preprocessor 1/1, model 8/30
+✓ Fold10: preprocessor 1/1, model 8/30
+i Fold10: preprocessor 1/1, model 8/30 (predictions)
+i Fold10: preprocessor 1/1, model 9/30
+✓ Fold10: preprocessor 1/1, model 9/30
+i Fold10: preprocessor 1/1, model 9/30 (predictions)
+i Fold10: preprocessor 1/1, model 10/30
+✓ Fold10: preprocessor 1/1, model 10/30
+i Fold10: preprocessor 1/1, model 10/30 (predictions)
+i Fold10: preprocessor 1/1, model 11/30
+✓ Fold10: preprocessor 1/1, model 11/30
+i Fold10: preprocessor 1/1, model 11/30 (predictions)
+i Fold10: preprocessor 1/1, model 12/30
+✓ Fold10: preprocessor 1/1, model 12/30
+i Fold10: preprocessor 1/1, model 12/30 (predictions)
+i Fold10: preprocessor 1/1, model 13/30
+✓ Fold10: preprocessor 1/1, model 13/30
+i Fold10: preprocessor 1/1, model 13/30 (predictions)
+i Fold10: preprocessor 1/1, model 14/30
+✓ Fold10: preprocessor 1/1, model 14/30
+i Fold10: preprocessor 1/1, model 14/30 (predictions)
+i Fold10: preprocessor 1/1, model 15/30
+✓ Fold10: preprocessor 1/1, model 15/30
+i Fold10: preprocessor 1/1, model 15/30 (predictions)
+i Fold10: preprocessor 1/1, model 16/30
+✓ Fold10: preprocessor 1/1, model 16/30
+i Fold10: preprocessor 1/1, model 16/30 (predictions)
+i Fold10: preprocessor 1/1, model 17/30
+✓ Fold10: preprocessor 1/1, model 17/30
+i Fold10: preprocessor 1/1, model 17/30 (predictions)
+i Fold10: preprocessor 1/1, model 18/30
+✓ Fold10: preprocessor 1/1, model 18/30
+i Fold10: preprocessor 1/1, model 18/30 (predictions)
+i Fold10: preprocessor 1/1, model 19/30
+✓ Fold10: preprocessor 1/1, model 19/30
+i Fold10: preprocessor 1/1, model 19/30 (predictions)
+i Fold10: preprocessor 1/1, model 20/30
+✓ Fold10: preprocessor 1/1, model 20/30
+i Fold10: preprocessor 1/1, model 20/30 (predictions)
+i Fold10: preprocessor 1/1, model 21/30
+✓ Fold10: preprocessor 1/1, model 21/30
+i Fold10: preprocessor 1/1, model 21/30 (predictions)
+i Fold10: preprocessor 1/1, model 22/30
+✓ Fold10: preprocessor 1/1, model 22/30
+i Fold10: preprocessor 1/1, model 22/30 (predictions)
+i Fold10: preprocessor 1/1, model 23/30
+✓ Fold10: preprocessor 1/1, model 23/30
+i Fold10: preprocessor 1/1, model 23/30 (predictions)
+i Fold10: preprocessor 1/1, model 24/30
+✓ Fold10: preprocessor 1/1, model 24/30
+i Fold10: preprocessor 1/1, model 24/30 (predictions)
+i Fold10: preprocessor 1/1, model 25/30
+✓ Fold10: preprocessor 1/1, model 25/30
+i Fold10: preprocessor 1/1, model 25/30 (predictions)
+i Fold10: preprocessor 1/1, model 26/30
+✓ Fold10: preprocessor 1/1, model 26/30
+i Fold10: preprocessor 1/1, model 26/30 (predictions)
+i Fold10: preprocessor 1/1, model 27/30
+✓ Fold10: preprocessor 1/1, model 27/30
+i Fold10: preprocessor 1/1, model 27/30 (predictions)
+i Fold10: preprocessor 1/1, model 28/30
+✓ Fold10: preprocessor 1/1, model 28/30
+i Fold10: preprocessor 1/1, model 28/30 (predictions)
+i Fold10: preprocessor 1/1, model 29/30
+✓ Fold10: preprocessor 1/1, model 29/30
+i Fold10: preprocessor 1/1, model 29/30 (predictions)
+i Fold10: preprocessor 1/1, model 30/30
+✓ Fold10: preprocessor 1/1, model 30/30
+i Fold10: preprocessor 1/1, model 30/30 (predictions)
+! Fold10: internal: A correlation computation is required, but `estimate` is const...
+✓ Fold10: internal
+> 
+> saveRDS(tune_tree_lr, "BTTuneTalapasGrid_Tuned.Rds")
+> 
+> 
+> #collect metrics
+> bt_grid_met <- tune_tree_lr %>%
++   collect_metrics() 
+> 
+> bt_grid_met
+# A tibble: 60 x 7
+   learn_rate .metric .estimator     mean     n std_err .config              
+        <dbl> <chr>   <chr>         <dbl> <int>   <dbl> <fct>                
+ 1     0.0001 rmse    standard   1533.       10  4.66   Preprocessor1_Model01
+ 2     0.0001 rsq     standard    NaN         0 NA      Preprocessor1_Model01
+ 3     0.0208 rmse    standard    114.       10  8.21   Preprocessor1_Model02
+ 4     0.0208 rsq     standard      0.215    10  0.0805 Preprocessor1_Model02
+ 5     0.0415 rmse    standard    107.       10  8.69   Preprocessor1_Model03
+ 6     0.0415 rsq     standard      0.289    10  0.0735 Preprocessor1_Model03
+ 7     0.0622 rmse    standard    107.       10  6.84   Preprocessor1_Model04
+ 8     0.0622 rsq     standard      0.272    10  0.0643 Preprocessor1_Model04
+ 9     0.0828 rmse    standard    116.       10  7.46   Preprocessor1_Model05
+10     0.0828 rsq     standard      0.213    10  0.0583 Preprocessor1_Model05
+# … with 50 more rows
+> 
+> bt_grid_rsq <- bt_grid_met %>%
++   filter(.metric == "rsq") %>%
++   arrange(.metric, desc(mean)) %>%
++   dplyr::slice(1:5)
+> 
+> bt_grid_rmse <- bt_grid_met %>%
++   filter(.metric == "rmse") %>%
++   arrange(.metric, mean) %>%
++   dplyr::slice(1:5)
+> 
+> 
+> 
+> bt_grid_metrics <- rbind(bt_grid_rsq, bt_grid_rmse) 
+> 
+> bt_grid_metrics %>%
++   write.csv("./BTTuneMetricsGrid.csv", row.names = FALSE)
+> 
+> 
+> 
+> #Let's plot
+> to_plot <- tune_tree_lr %>% 
++   unnest(.metrics) %>% 
++   group_by(.metric, learn_rate) %>% 
++   summarize(mean = mean(.estimate, na.rm = TRUE))
+`summarise()` regrouping output by '.metric' (override with `.groups` argument)
+> 
+> highlight <- to_plot %>% 
++   filter(.metric == "rmse" & mean == min(mean)) %>%
++   ungroup() %>% 
++   select(learn_rate) %>% 
++   semi_join(to_plot, .)
+Joining, by = "learn_rate"
+> 
+> ggplot(to_plot, aes(learn_rate, mean)) +
++   geom_point() +
++   geom_point(color = "#de4f69", data = highlight) +
++   facet_wrap(~.metric, scales = "free_y")
+Warning message:
+Removed 1 rows containing missing values (geom_point). 
+> 
+> ggsave("BTMetricsGrid_Tuned.pdf",
++        plot = last_plot(),
++        scale = 1)
+Saving 7 x 7 in image
+Warning message:
+Removed 1 rows containing missing values (geom_point). 
+> 
+> tune_tree_lr %>% 
++   collect_metrics() %>% 
++   group_by(.metric) %>% 
++   arrange(mean) %>% 
++   dplyr::slice(1)
+# A tibble: 2 x 7
+# Groups:   .metric [2]
+  learn_rate .metric .estimator    mean     n std_err .config              
+       <dbl> <chr>   <chr>        <dbl> <int>   <dbl> <fct>                
+1      0.124 rmse    standard   106.       10  8.32   Preprocessor1_Model07
+2      0.6   rsq     standard     0.120    10  0.0421 Preprocessor1_Model30
+> 
+> #Now let's look at the model with the best rmse
+> best_rmse <- tune_tree_lr %>% 
++   select_best(metric = "rmse")
+> 
+> best_rmse
+# A tibble: 1 x 2
+  learn_rate .config              
+       <dbl> <fct>                
+1      0.124 Preprocessor1_Model07
+> 
+> bt_wf_final <- finalize_workflow(
++   wf_tune_lr,
++   best_rmse)
+> 
+> 
+> #apply to test split
+> test_fit <- last_fit(bt_wf_final, edu_split)
+> test_metrics <- test_fit$.metrics
+> 
+> test_metrics %>%
++   write.csv("./BTTestMetrics_Tuned.csv", row.names = FALSE)
+> 
+> #make predictions on test.csv using this final workflow
+> full_test <- read_csv("data/test.csv",
++                       col_types = cols(.default = col_guess(), 
++                                        calc_admn_cd = col_character()))
+> #str(full_test)
+> 
+> #join with ethnicity data
+> full_test_eth <- left_join(full_test, ethnicities) #join with FRL dataset
+Joining, by = "attnd_schl_inst_id"
+> #str(full_test_eth)
+> 
+> #join with frl
+> full_test_FRL <- left_join(full_test_eth, frl)
+Joining, by = "ncessch"
+> 
+> nrow(full_test_FRL)
+[1] 63142
+> 
+> #workflow
+> fit_workflow <- fit(bt_wf_final, frl_fulltrain)
+> 
+> #use model to make predictions for test dataset
+> preds_final <- predict(fit_workflow, full_test_FRL) #use model to make predictions for test dataset
+> 
+> saveRDS(preds_final, "BTPreds_Tuned.Rds")
+> 
+> head(preds_final)
+# A tibble: 6 x 1
+  .pred
+  <dbl>
+1 2497.
+2 2482.
+3 2532.
+4 2416.
+5 2512.
+6 2499.
+> 
+> pred_frame <- tibble(Id = full_test_FRL$id, Predicted = preds_final$.pred)
+> head(pred_frame, 20)
+# A tibble: 20 x 2
+      Id Predicted
+   <dbl>     <dbl>
+ 1     4     2497.
+ 2     6     2482.
+ 3     8     2532.
+ 4     9     2416.
+ 5    11     2512.
+ 6    15     2499.
+ 7    19     2446.
+ 8    20     2436.
+ 9    32     2514.
+10    33     2440.
+11    40     2547.
+12    42     2478.
+13    46     2488.
+14    50     2436.
+15    57     2483.
+16    59     2488.
+17    66     2572.
+18    73     2485.
+19    78     2403.
+20    91     2407.
+> nrow(pred_frame)
+[1] 63142
+> 
+> #create prediction file
+> write_csv(pred_frame, "fit_bt_Tuned.csv")
+> 
+> proc.time()
+   user  system elapsed 
+466.322  10.213 476.998 

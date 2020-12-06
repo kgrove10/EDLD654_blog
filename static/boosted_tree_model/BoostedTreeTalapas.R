@@ -47,9 +47,6 @@ frl <- read_csv("data/frl_stucounts.csv")
 # add frl data to train data
 frl_fulltrain <- left_join(full_train, frl)
 
-frl_fulltrain <- frl_fulltrain %>% 
-  sample_frac(0.001)
-
 #dim(frl_fulltrain)
 
 #split data and resample
@@ -85,24 +82,10 @@ set.seed(500)
 
 cores <- 8
 
-#default model without tuning
-mod <- boost_tree() %>% 
+#tuned model
+tune_lr <- boost_tree() %>% 
   set_engine("xgboost", num.threads = cores) %>% 
   set_mode("regression") %>% 
-  set_args(trees = 5000, #number of trees in the ensemble
-           stop_iter = 20, #the number of iterations without improvement before stopping
-           validation = 0.2,
-           learn_rate = 0.1) #the rate at which boosting algoirithm adapts at each iteration
-
-
-#create workflow for default boosted model
-wf_df <- workflow() %>% 
-  add_recipe(rec) %>% 
-  add_model(mod)
-
-
-#tuned model
-tune_lr <- mod %>% 
   set_args(trees = 5000, #number of trees in the ensemble
            stop_iter = 20, #the number of iterations without improvement before stopping
            validation = 0.2,
@@ -113,15 +96,15 @@ tune_lr <- mod %>%
 translate(tune_lr)
 
 #create workflow for tuned model
-wf_tune_lr <- wf_df %>% 
-  update_model(tune_lr)
+wf_tune_lr <- workflow() %>% 
+  add_recipe(rec) %>% 
+  add_model(tune_lr)
 
 #grid for tuning learning rate
 grd <- expand.grid(learn_rate = seq(0.0001, 0.3, length.out = 30))
 
 metrics_eval <- metric_set(rmse, 
-                           rsq, 
-                           huber_loss)
+                           rsq)
 
 #fit model w/ tuned learning rate
 tune_tree_lr <- tune_grid(
@@ -152,13 +135,9 @@ bt_grid_rmse <- bt_grid_met %>%
   arrange(.metric, mean) %>%
   dplyr::slice(1:5)
 
-bt_grid_hl <- bt_grid_met %>%
-  filter(.metric == "huber_loss") %>%
-  arrange(.metric, mean) %>%
-  dplyr::slice(1:5)
 
 
-bt_grid_metrics <- rbind(bt_grid_rsq, bt_grid_rmse, bt_grid_hl) 
+bt_grid_metrics <- rbind(bt_grid_rsq, bt_grid_rmse) 
 
 bt_grid_metrics %>%
   write.csv("./BTTuneMetricsGrid.csv", row.names = FALSE)
@@ -169,8 +148,8 @@ bt_grid_metrics %>%
 to_plot <- tune_tree_lr %>% 
   unnest(.metrics) %>% 
   group_by(.metric, learn_rate) %>% 
-  summarize(mean = mean(.estimate, na.rm = TRUE)) %>% 
-  filter(learn_rate != 0.0001) 
+  summarize(mean = mean(.estimate, na.rm = TRUE)) %>%
+  filter(learn_rate != 0.0001)
 
 highlight <- to_plot %>% 
   filter(.metric == "rmse" & mean == min(mean)) %>%
@@ -187,11 +166,17 @@ ggsave("BTMetricsGrid_Tuned.pdf",
        plot = last_plot(),
        scale = 1)
 
+tune_tree_lr %>% 
+  collect_metrics() %>% 
+  group_by(.metric) %>% 
+  arrange(mean) %>% 
+  dplyr::slice(1)
 
 #Now let's look at the model with the best rmse
 best_rmse <- tune_tree_lr %>% 
   select_best(metric = "rmse")
 
+best_rmse
 
 bt_wf_final <- finalize_workflow(
   wf_tune_lr,
