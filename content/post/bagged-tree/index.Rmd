@@ -12,7 +12,7 @@ In this post, we will outline how we fit a bagged tree model to our data.
 
 **What does the Bagged Tree Model do?**
 
-Bagged trees are just a special case of random forests where there is no sampling of columns when each tree is built. A bagged tree approach creates multiple subsets of data from the training set which are randomly chosen with replacement. Each subset of data is used to train a given decision tree. In the end, we have an ensemble of different models. This is a general approach known as **bagging**, or **b**ootstrap **agg**regation. The predictions from all the different trees are averaged together, giving us a stronger prediction than one tree could independently.
+Bagged trees are a special case of random forests where there is no sampling of columns when each tree is built. A bagged tree approach creates multiple subsets of data from the training set where each of these subsets is used to train a given decision tree. The predictions from all the different subsets are averaged together, giving us a stronger prediction than one tree could do independently.
 
 **Hyperparameters to be optimized**
 
@@ -124,9 +124,7 @@ We see from the plot above that setting $b$ to 175 would be the optiomal number 
 
 ### Bagged Trees Visualization 
 
-The plot below shows the root nodes from a bagged tree made of 60 trees (6 folds x 10 resamples). As notes based on our RMSE, the optimal number of resamples (trees) is 175 but for time and computional eficiency purposes we only set it to 10 in this visualization.
-
-Root nodes are the 1st node in a decision tree, and they are determined by which variable best optimizes a loss function (e.g., minimizes RMSE for continuous outcomes or Gini Index for categorical outcomes).  
+The plot below shows the root nodes from a bagged tree made of 60 trees (6 folds x 10 resamples). As noted based on our RMSE, the optimal number of resamples (trees) is 175 but for time and computional eficiency purposes we only set it to 10 in this visualization.
 
 ```{r eval=FALSE}
 # extract roots
@@ -152,8 +150,9 @@ bag_roots(fit_bag) %>%
 
 ```
 
-![Root nodes visualisation](https://www.dropbox.com/s/azkgm00earj5nvr/bagtree_root.png?dl=0)
-
+```{r echo = FALSE}
+blogdown::shortcode("figure", src ='"/plots/bagtree_root.png"', alt = "Root nodes")
+```
 
 **Model Fitting Results**
 
@@ -163,7 +162,9 @@ From the fitted model, we then extract just the metrics in order to compare the 
 
 The following table shows our model fitting metrics.
 
-![Metrics Table](https://www.dropbox.com/s/m8hbr7mvqkjcq1z/bag_trees%20metrics%20table.png?dl=0)
+```{r echo = FALSE}
+blogdown::shortcode("figure", src ='"/plots/metrics.png"', alt = "Metrics Table")
+```
 
 The following code shows our the final fit of the model to the testing data to make predictions. 
 
