@@ -47,6 +47,9 @@ frl <- read_csv("data/frl_stucounts.csv")
 # add frl data to train data
 frl_fulltrain <- left_join(full_train, frl)
 
+frl_fulltrain <- frl_fulltrain %>% 
+  sample_frac(0.001)
+
 #dim(frl_fulltrain)
 
 #split data and resample
@@ -80,9 +83,11 @@ prep(rec)
 
 set.seed(500)
 
+8 <- cores
+
 #default model without tuning
 mod <- boost_tree() %>% 
-  set_engine("xgboost", nthreads = parallel::detectCores()) %>% 
+  set_engine("xgboost", num.threads = cores) %>% 
   set_mode("regression") %>% 
   set_args(trees = 5000, #number of trees in the ensemble
            stop_iter = 20, #the number of iterations without improvement before stopping
@@ -124,29 +129,25 @@ tune_tree_lr <- tune_grid(
                               save_pred = TRUE,
                               extract = function(x) extract_model(x)))
 
-saveRDS(tune_tree_lr, "BTTuneTalapasGrid.Rds")
+saveRDS(tune_tree_lr, "BTTuneTalapasGrid_Tuned.Rds")
 
 
 #collect metrics
 bt_grid_met <- tune_tree_lr %>%
   collect_metrics() 
 
-bt_grid_rsq <- tune_tree_lr %>%
+bt_grid_rsq <- bt_grid_met %>%
   filter(.metric == "rsq") %>%
   arrange(.metric, desc(mean)) %>%
   slice(1:5)
 
-bt_grid_rmse <- tune_tree_lr %>%
+bt_grid_rmse <- bt_grid_met %>%
   filter(.metric == "rmse") %>%
   arrange(.metric, mean) %>%
   slice(1:5)
 
-bt_grid_hl <- tune_tree_lr %>%
-  filter(.metric == "huber_loss") %>%
-  arrange(.metric, mean) %>%
-  slice(1:5)
 
-bt_grid_metrics <- rbind(bt_grid_rsq, bt_grid_rmse, bt_grid_hl) 
+bt_grid_metrics <- rbind(bt_grid_rsq, bt_grid_rmse) 
 
 bt_grid_metrics %>%
   write.csv("./BTTuneMetricsGrid.csv", row.names = FALSE)
@@ -171,12 +172,12 @@ ggplot(to_plot, aes(learn_rate, mean)) +
   geom_point(color = "#de4f69", data = highlight) +
   facet_wrap(~.metric, scales = "free_y")
 
-ggsave("BTMetricsGrid.pdf",
+ggsave("BTMetricsGrid_Tuned.pdf",
        plot = last_plot(),
        scale = 1)
 
 
-#Not let's look at the model with the best rmse
+#Now let's look at the model with the best rmse
 best_rmse <- tune_tree_lr %>% 
   select_best(metric = "rmse")
 
@@ -191,7 +192,7 @@ test_fit <- last_fit(bt_wf_final, edu_split)
 test_metrics <- test_fit$.metrics
 
 test_metrics %>%
-  write.csv("./BTTestMetrics.csv", row.names = FALSE)
+  write.csv("./BTTestMetrics_Tuned.csv", row.names = FALSE)
 
 #make predictions on test.csv using this final workflow
 full_test <- read_csv("data/test.csv",
@@ -214,7 +215,7 @@ fit_workflow <- fit(bt_wf_final, frl_fulltrain)
 #use model to make predictions for test dataset
 preds_final <- predict(fit_workflow, full_test_FRL) #use model to make predictions for test dataset
 
-saveRDS(preds_final, "BTPreds.Rds")
+saveRDS(preds_final, "BTPreds_Tuned.Rds")
 
 head(preds_final)
 
@@ -223,4 +224,4 @@ head(pred_frame, 20)
 nrow(pred_frame)
 
 #create prediction file
-write_csv(pred_frame, "fit_bt.csv")
+write_csv(pred_frame, "fit_bt_Tuned.csv")
