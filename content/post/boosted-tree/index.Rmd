@@ -444,7 +444,7 @@ final_lr <- tune_grid(wf_final_lr, cv, grid = 30)
 autoplot(final_lr)
 
 #show best
-show_best(final_lr, "rmse")
+show_best(final_lr, "rmse") 
 
 ```
 
