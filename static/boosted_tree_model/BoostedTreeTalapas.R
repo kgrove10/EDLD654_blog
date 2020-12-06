@@ -83,7 +83,7 @@ prep(rec)
 
 set.seed(500)
 
-8 <- cores
+cores <- 8
 
 #default model without tuning
 mod <- boost_tree() %>% 
