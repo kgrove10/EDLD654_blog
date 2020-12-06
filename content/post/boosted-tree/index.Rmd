@@ -263,7 +263,7 @@ bt_grid_metrics %>%
 
 It looks like we got the following metrics for our model:
 
-```{r echo = FALSE, warning = FALSE, message = FALSE}
+```{r eval = FALSE, warning = FALSE, message = FALSE}
 library(rio)
 library(here)
 
@@ -297,7 +297,7 @@ ggplot(to_plot, aes(learn_rate, mean)) +
 
 According to this visualization, it looks like XX is the best learning rate
 
-```{r viz, echo=FALSE}
+```{r viz, eval=FALSE}
 blogdown::shortcode("figure", src ='"/boosted_forest_model/BTMetricsGrid_Tuned.pdf"', alt = "Tuned Metrics Visualization")
 
 ```
@@ -327,7 +327,7 @@ test_metrics %>%
 
 Our final workflow applied to the full training dataset gives us the following results:
 
-```{r , echo = FALSE}
+```{r , eval = FALSE}
 testres <- import(here("static", "boosted_tree_model", "BTTestMetrics_Tuned.csv"))
 
 knitr::kable(testres)

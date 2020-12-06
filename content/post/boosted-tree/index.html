@@ -11,7 +11,7 @@ tags: []
 <script src="index_files/anchor-sections/anchor-sections.js"></script>
 
 
-<p>In this post, we will outline how we fit a boosted tree model to our data.</p>
+<p>In this post, we will outline how we fit a boosted tree model to our data. Most of our information on boosted trees comes from our lovely Machine Learning instructors <a href="https://uo-datasci-specialization.github.io/c4-ml-fall-2020/">Daniel Anderson and Joe Nese</a></p>
 <div id="boosted-tree-model-description" class="section level2">
 <h2>Boosted Tree Model Description</h2>
 <p><strong>What does the Boosted Tree Model do?</strong>
@@ -52,12 +52,12 @@ We selected this model because, unlike random forests, which aggregate predictio
 <p><strong>Boosted Tree Model Assumptions</strong>
 Boosted Tree Models rely on an optimization algorithm known as Gradient Descent. Although gradient descent is a rather complex concept, it can be thought of as a way to evaluate our predictions against a “cost function,” which then will move us in the direction with the “steepest descent.” In a tree model, gradient descent is used to iteratively build each tree from the prior trees in the most optimal way. Models that use gradient specify a cost function, such as mean squared error. Then, the partial derivative of each model parameter is calculated according to the cost function, which will define our gradient landscape and allow us to move downhill in the steepest direction.</p>
 <p>The distance that our predictions move is influenced by the learning rate of our model, which is multiplied by these derivative values and then subtracted from the current parameter estimates. This learning rate is essentially the speed at which the algorithm steps downhill.</p>
-<p>The model continues to move down the gradient in an iterative fashion to minimize our model error until we our model can’t improve any more! During each iteration, we will take a step along the gradient in the mot optimal direction to reduce the error in our predictions. Luckily, we don’t have to do any of this by hand ourselves because tidymodels will handle this for us! Bless you, tidymodels!</p>
+<p>The model continues to move down the gradient in an iterative fashion to minimize our model error until our model can’t improve any more! During each iteration, we will take a step along the gradient in the mot optimal direction to reduce the error in our predictions. Luckily, we don’t have to do any of this by hand ourselves because tidymodels will handle this for us! Bless you, tidymodels!</p>
 </div>
 <div id="fitting-our-boosted-tree-model" class="section level2">
 <h2>Fitting our Boosted Tree Model</h2>
 <p><strong>Model Fitting Procedures</strong></p>
-<p>First, we will start out with a default Boosted Tree Model with no hyperparameters. The arguments defined are based on recommendations from Daniel Anderson and Joe Nese.</p>
+<p>A description of our data prep procedures can be found <a href="https://edld654finalproject.netlify.app/2020/11/30/data-description/">here</a>. The model fit was completed using the University of Oregon’s “Talapas” Supercomputer, so while some example code will be included with this post, computations were conducted elsewhere, and the full code can be found on our <a href="https://github.com/kgrove10/EDLD654_blog/blob/main/static/boosted_forest_model">GitHub here</a>. We will start out with a default Boosted Tree Model with no hyperparameters. The arguments defined are based on recommendations from Daniel Anderson and Joe Nese.</p>
 <pre class="r"><code>set.seed(500)
 
 #default model without tuning
@@ -77,7 +77,7 @@ wf_df &lt;- workflow() %&gt;%
   add_recipe(rec) %&gt;% 
   add_model(mod)
 
-#fit default boosted model
+#fit model
 fit_default &lt;- fit_resamples(
   wf_df, 
   train_cv, 
@@ -86,9 +86,108 @@ fit_default &lt;- fit_resamples(
                               save_pred = TRUE,
                               extract = function(x) extract_model(x)))
 
-#look at metrics of default boosted model to evaluate performance
-collect_metrics(fit_default)</code></pre>
-<p>Now, let’s try to tune the learning rate of the model to reduce the rmse even more.</p>
+#collect metrics
+bt_def_met &lt;- fit_default %&gt;%
+  collect_metrics() 
+
+bt_def_met %&gt;%
+  write.csv(&quot;./BTTuneMetricsDefault.csv&quot;, row.names = FALSE)</code></pre>
+<p>The metrics for the default model are:</p>
+<table>
+<thead>
+<tr class="header">
+<th align="left">.metric</th>
+<th align="left">.estimator</th>
+<th align="right">mean</th>
+<th align="right">n</th>
+<th align="right">std_err</th>
+<th align="left">.config</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">rmse</td>
+<td align="left">standard</td>
+<td align="right">84.9435403</td>
+<td align="right">10</td>
+<td align="right">0.2966425</td>
+<td align="left">Preprocessor1_Model1</td>
+</tr>
+<tr class="even">
+<td align="left">rsq</td>
+<td align="left">standard</td>
+<td align="right">0.4603229</td>
+<td align="right">10</td>
+<td align="right">0.0018735</td>
+<td align="left">Preprocessor1_Model1</td>
+</tr>
+</tbody>
+</table>
+<p>If we were happy with this (and didn’t want to tune hyperparameters), we could then apply this our workflow to our last split with the following code:</p>
+<pre class="r"><code>test_fit &lt;- last_fit(wf_df, edu_split)
+test_metrics &lt;- test_fit$.metrics
+
+test_metrics %&gt;%
+  write.csv(&quot;./BTTestMetrics1.csv&quot;, row.names = FALSE)</code></pre>
+<p>When our default boosted model is applied to our full training set, we get the following results:</p>
+<table>
+<thead>
+<tr class="header">
+<th align="left">.metric</th>
+<th align="left">.estimator</th>
+<th align="right">.estimate</th>
+<th align="left">.config</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">rmse</td>
+<td align="left">standard</td>
+<td align="right">85.0943206</td>
+<td align="left">Preprocessor1_Model1</td>
+</tr>
+<tr class="even">
+<td align="left">rsq</td>
+<td align="left">standard</td>
+<td align="right">0.4660012</td>
+<td align="left">Preprocessor1_Model1</td>
+</tr>
+</tbody>
+</table>
+<p>And then we can make our predictions on unseen data, and submit that to Kaggle with the following code:</p>
+<pre class="r"><code>#make predictions on test.csv using this final workflow
+full_test &lt;- read_csv(&quot;data/test.csv&quot;,
+                      col_types = cols(.default = col_guess(), 
+                                       calc_admn_cd = col_character()))
+#str(full_test)
+
+#join with ethnicity data
+full_test_eth &lt;- left_join(full_test, ethnicities) #join with FRL dataset
+#str(full_test_eth)
+
+#join with frl
+full_test_FRL &lt;- left_join(full_test_eth, frl)
+
+nrow(full_test_FRL)
+
+#workflow
+fit_workflow &lt;- fit(wf_df, frl_fulltrain)
+
+#use model to make predictions for test dataset
+preds_final &lt;- predict(fit_workflow, full_test_FRL) #use model to make predictions for test dataset
+
+head(preds_final)
+
+pred_frame &lt;- tibble(Id = full_test_FRL$id, Predicted = preds_final$.pred)
+head(pred_frame, 20)
+nrow(pred_frame)
+
+#create prediction file
+write_csv(pred_frame, &quot;fit_bt.csv&quot;)</code></pre>
+<p>THEN SUBMIT TO KAGGLE!</p>
+<p>But wait……</p>
+<p>What if we really wanted to try and reduce the rmse by tunung the hyperparameters?</p>
+<p>Let’s try to tune the learning rate of the model to reduce the rmse even more using the following code:</p>
 <pre class="r"><code>set.seed(500)
 
 #tuned model
@@ -103,9 +202,8 @@ translate(tune_lr)
 
 #create workflow for tuned model
 wf_tune_lr &lt;- wf_df %&gt;% 
-  update_model(tune_lr)
-
-#grid for tuning learning rate
+  update_model(tune_lr)</code></pre>
+<pre class="r"><code>#grid for tuning learning rate
 grd &lt;- expand.grid(learn_rate = seq(0.0001, 0.3, length.out = 30))
 
 #fit model w/ tuned learning rate
@@ -118,7 +216,34 @@ tune_tree_lr &lt;- tune_grid(
                               save_pred = TRUE,
                               extract = function(x) extract_model(x)))
 
-#Let&#39;s plot
+#let&#39;s collect metrics
+#collect metrics
+bt_grid_met &lt;- tune_tree_lr %&gt;%
+  collect_metrics() 
+
+bt_grid_rsq &lt;- bt_grid_met  %&gt;%
+  filter(.metric == &quot;rsq&quot;) %&gt;%
+  arrange(.metric, desc(mean)) %&gt;%
+  slice(1:5)
+
+bt_grid_rmse &lt;- bt_grid_met %&gt;%
+  filter(.metric == &quot;rmse&quot;) %&gt;%
+  arrange(.metric, mean) %&gt;%
+  slice(1:5)
+
+bt_grid_metrics &lt;- rbind(bt_grid_rsq, bt_grid_rmse) 
+
+bt_grid_metrics %&gt;%
+  write.csv(&quot;./BTTuneMetricsGrid_Tuned.csv&quot;, row.names = FALSE)</code></pre>
+<p>It looks like we got the following metrics for our model:</p>
+<pre class="r"><code>library(rio)
+library(here)
+
+tunedres &lt;- import(here(&quot;static&quot;, &quot;boosted_forest_model&quot;, &quot;BTTuneMetricsGrid_Tuned.csv&quot;))
+
+knitr::kable(tunedres)</code></pre>
+<p>It looks like the best model is XXX. Let’s create a plot using the following code:</p>
+<pre class="r"><code>#Let&#39;s plot
 to_plot &lt;- tune_tree_lr %&gt;% 
   unnest(.metrics) %&gt;% 
   group_by(.metric, learn_rate) %&gt;% 
@@ -134,24 +259,14 @@ highlight &lt;- to_plot %&gt;%
 ggplot(to_plot, aes(learn_rate, mean)) +
   geom_point() +
   geom_point(color = &quot;#de4f69&quot;, data = highlight) +
-  facet_wrap(~.metric, scales = &quot;free_y&quot;)
-
-#Let&#39;s check out the metrics of the model
-tune_tree_lr %&gt;% 
-  collect_metrics() %&gt;% 
-  group_by(.metric) %&gt;% 
-  arrange(mean) %&gt;% 
-  dplyr::slice(1)
-
-#Not let&#39;s look at the model with the best rmse
+  facet_wrap(~.metric, scales = &quot;free_y&quot;)</code></pre>
+<p>According to this visualization, it looks like XX is the best learning rate</p>
+<pre class="r"><code>blogdown::shortcode(&quot;figure&quot;, src =&#39;&quot;/boosted_forest_model/BTMetricsGrid_Tuned.pdf&quot;&#39;, alt = &quot;Tuned Metrics Visualization&quot;)</code></pre>
+<p>If we wanted to now finalize our model and apply it to our test data to make predictions, we would use the following code.</p>
+<pre class="r"><code>#Now let&#39;s select best model and finalize our workflow
 best_rmse &lt;- tune_tree_lr %&gt;% 
   select_best(metric = &quot;rmse&quot;)
 
-tune_tree_lr %&gt;% 
-  collect_metrics() %&gt;% 
-  semi_join(best_rmse)</code></pre>
-<p>If we wanted to now finalize our model and apply it to our test data to make predictions, we would use the following code.</p>
-<pre class="r"><code>#Finalize our workflow
 bt_wf_final &lt;- finalize_workflow(
   wf_tune_lr,
   best_rmse)
@@ -161,12 +276,12 @@ test_fit &lt;- last_fit(bt_wf_final, edu_split)
 test_metrics &lt;- test_fit$.metrics
 
 test_metrics %&gt;%
-  write.csv(&quot;./BTTestMetrics.csv&quot;, row.names = FALSE)</code></pre>
+  write.csv(&quot;./BTTestMetrics_Tuned.csv&quot;, row.names = FALSE)</code></pre>
+<p><strong>Model Fitting Results</strong></p>
 <p>Our final workflow applied to the full training dataset gives us the following results:</p>
-<pre class="r"><code>testres &lt;- import(here(&quot;static&quot;, &quot;boosted_tree_model&quot;, &quot;BTTestMetrics.csv&quot;))
+<pre class="r"><code>testres &lt;- import(here(&quot;static&quot;, &quot;boosted_tree_model&quot;, &quot;BTTestMetrics_Tuned.csv&quot;))
 
 knitr::kable(testres)</code></pre>
-<p><strong>Model Fitting Results</strong></p>
 <p>SPECIAL NOTE: if we wanted to tune other hyperparameters because we are really ambitious, we could use the following code (although we did not do this for our model predictions because it just took way too long!).</p>
 <pre class="r"><code>set.seed(500)
 
@@ -262,5 +377,5 @@ final_lr &lt;- tune_grid(wf_final_lr, cv, grid = 30)
 autoplot(final_lr)
 
 #show best
-show_best(final_lr, &quot;rmse&quot;)</code></pre>
+show_best(final_lr, &quot;rmse&quot;) </code></pre>
 </div>
