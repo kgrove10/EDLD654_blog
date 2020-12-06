@@ -27,7 +27,7 @@ library(rio) # import data
 library(tidymodels) # main modeling package
 library(skimr) # create data visualizations
 library(knitr) # create tables</code></pre>
-<p>Next, we’re going to read in the data. When we are importing the data, we will also sightly clean it. For example, with the fall membership 2019-2020 student enrollment report, we will update the names of columns to be in snake case to both match the names of our variable names in our main, <code>train.csv</code> data (e.g. “Attending School ID” becomes “attnd_schl_inst_id”), and to make these variables easier to work with in R. When importing our free and reduced lunch data, we clean names, and also replace missing data with 0s for student counts. Below, we will go over each of the variables present in our data.</p>
+<p>Next, we’re going to read in the data. When we are importing the data, we will also sightly clean it. For example, with the fall membership 2019-2020 student enrollment report, we will update the names of columns to be in snake case to both match the names of our variable names in our main, <code>train.csv</code> data (e.g. “Attending School ID” becomes “attnd_schl_inst_id”), and to make these variables easier to work with in R. When importing our free and reduced lunch data, we clean names, and also replace missing data with 0s for student counts. Below, we will go over each of the variables present in our data.</p>
 <pre class="r"><code>set.seed(500)
 # import our training data, remove the classification column, since we are interested in score, not student classification
 full_train &lt;- read_csv(&quot;data/train.csv&quot;,
@@ -106,7 +106,7 @@ full_train &lt;- left_join(full_train, ethnicities)
 # add frl data to train data
 frl_fulltrain &lt;- left_join(full_train, frl)</code></pre>
 <p>Now our three datasets are all loaded, cleaned, and joined together to make one cohesive data set we will use for all three of our tree-based models. Before we move on to preparing the data for modeling, let’s explore and describe the variables present in our joined data set, <code>frl_fulltrain</code>. The <a href="https://github.com/kgrove10/EDLD654_blog/blob/main/static/data/data_dictionary.csv">data dictionary</a> for the main data (<code>test.csv</code> and <code>train.csv</code>) is also available on our github.</p>
-<p>Each row of our data corresponds to an individual student observation. However, the data contained in each row includes both student-level variables, such as the student’s grade, gender, ethnicity, and enrollment in various programs, as well as school-level and district-level data, such as school ethnicity proportions and the proportion of students who qualify for free or reduced lunch programs. A detailed data dictionary for the initial <code>train.csv</code> data can be found <a href="">here</a>, but we will attempt to provide a brief description and overview of the 52 variables present in our <code>frl_fulltrain</code> data each of our three tree-based models will rely upon.</p>
+<p>Each row of our data corresponds to an individual student observation. However, the data contained in each row includes both student-level variables, such as the student’s grade, gender, ethnicity, and enrollment in various programs, as well as school-level and district-level data, such as school ethnicity proportions and the proportion of students who qualify for free or reduced lunch programs. A detailed data dictionary for the initial <code>train.csv</code> data can be found <a href="https://www.kaggle.com/c/edld-654-fall-2020/data?select=data_dictionary.csv">here</a>, but we will attempt to provide a brief description and overview of the 52 variables present in our <code>frl_fulltrain</code> data each of our three tree-based models will rely upon.</p>
 <p>Overall, our data consists of 17 numeric variables, 6 id variables, 1 date variable, and 28 categorical variables.</p>
 <p>Our 6 id variables are:</p>
 <ul>
@@ -186,8 +186,8 @@ frl_fulltrain &lt;- left_join(full_train, frl)</code></pre>
 <td align="left">46.18</td>
 </tr>
 <tr class="even">
-<td align="left">   Unknown</td>
-<td align="left">3,400/189,426 (2)</td>
+<td align="left">   Unknown/Missing</td>
+<td align="left">3,400 (1.79%)</td>
 </tr>
 <tr class="odd">
 <td align="left"><strong>lon</strong></td>
@@ -210,8 +210,8 @@ frl_fulltrain &lt;- left_join(full_train, frl)</code></pre>
 <td align="left">-116.94</td>
 </tr>
 <tr class="even">
-<td align="left">   Unknown</td>
-<td align="left">3,400/189,426 (2)</td>
+<td align="left">   Unknown/Missing</td>
+<td align="left">3,400 (1.79%)</td>
 </tr>
 <tr class="odd">
 <td align="left"><strong>p_american_indian_alaska_native</strong></td>
@@ -234,8 +234,8 @@ frl_fulltrain &lt;- left_join(full_train, frl)</code></pre>
 <td align="left">0.88</td>
 </tr>
 <tr class="even">
-<td align="left">   Unknown</td>
-<td align="left">154/189,426 (0)</td>
+<td align="left">   Unknown/Missing</td>
+<td align="left">154 (0.08%)</td>
 </tr>
 <tr class="odd">
 <td align="left"><strong>p_asian</strong></td>
@@ -258,8 +258,8 @@ frl_fulltrain &lt;- left_join(full_train, frl)</code></pre>
 <td align="left">0.62</td>
 </tr>
 <tr class="even">
-<td align="left">   Unknown</td>
-<td align="left">154/189,426 (0)</td>
+<td align="left">   Unknown/Missing</td>
+<td align="left">154 (0.08%)</td>
 </tr>
 <tr class="odd">
 <td align="left"><strong>p_native_hawaiian_pacific_islander</strong></td>
@@ -282,8 +282,8 @@ frl_fulltrain &lt;- left_join(full_train, frl)</code></pre>
 <td align="left">0.33</td>
 </tr>
 <tr class="even">
-<td align="left">   Unknown</td>
-<td align="left">154/189,426 (0)</td>
+<td align="left">   Unknown/Missing</td>
+<td align="left">154 (0.08%)</td>
 </tr>
 <tr class="odd">
 <td align="left"><strong>p_black_african_american</strong></td>
@@ -306,8 +306,8 @@ frl_fulltrain &lt;- left_join(full_train, frl)</code></pre>
 <td align="left">0.50</td>
 </tr>
 <tr class="even">
-<td align="left">   Unknown</td>
-<td align="left">154/189,426 (0)</td>
+<td align="left">   Unknown/Missing</td>
+<td align="left">154 (0.08%)</td>
 </tr>
 <tr class="odd">
 <td align="left"><strong>p_hispanic_latino</strong></td>
@@ -330,8 +330,8 @@ frl_fulltrain &lt;- left_join(full_train, frl)</code></pre>
 <td align="left">1.00</td>
 </tr>
 <tr class="even">
-<td align="left">   Unknown</td>
-<td align="left">154/189,426 (0)</td>
+<td align="left">   Unknown/Missing</td>
+<td align="left">154 (0.08%)</td>
 </tr>
 <tr class="odd">
 <td align="left"><strong>p_white</strong></td>
@@ -354,8 +354,8 @@ frl_fulltrain &lt;- left_join(full_train, frl)</code></pre>
 <td align="left">1.00</td>
 </tr>
 <tr class="even">
-<td align="left">   Unknown</td>
-<td align="left">154/189,426 (0)</td>
+<td align="left">   Unknown/Missing</td>
+<td align="left">154 (0.08%)</td>
 </tr>
 <tr class="odd">
 <td align="left"><strong>p_multiracial</strong></td>
@@ -378,8 +378,8 @@ frl_fulltrain &lt;- left_join(full_train, frl)</code></pre>
 <td align="left">0.35</td>
 </tr>
 <tr class="even">
-<td align="left">   Unknown</td>
-<td align="left">154/189,426 (0)</td>
+<td align="left">   Unknown/Missing</td>
+<td align="left">154 (0.08%)</td>
 </tr>
 <tr class="odd">
 <td align="left"><strong>free_lunch_qualified</strong></td>
@@ -402,8 +402,8 @@ frl_fulltrain &lt;- left_join(full_train, frl)</code></pre>
 <td align="left">813</td>
 </tr>
 <tr class="even">
-<td align="left">   Unknown</td>
-<td align="left">3,216/189,426 (2)</td>
+<td align="left">   Unknown/Missing</td>
+<td align="left">3,216 (1.70%)</td>
 </tr>
 <tr class="odd">
 <td align="left"><strong>reduced_price_lunch_qualified</strong></td>
@@ -426,8 +426,8 @@ frl_fulltrain &lt;- left_join(full_train, frl)</code></pre>
 <td align="left">132</td>
 </tr>
 <tr class="even">
-<td align="left">   Unknown</td>
-<td align="left">3,216/189,426 (2)</td>
+<td align="left">   Unknown/Missing</td>
+<td align="left">3,216 (1.70%)</td>
 </tr>
 <tr class="odd">
 <td align="left"><strong>missing</strong></td>
@@ -450,8 +450,8 @@ frl_fulltrain &lt;- left_join(full_train, frl)</code></pre>
 <td align="left">0</td>
 </tr>
 <tr class="even">
-<td align="left">   Unknown</td>
-<td align="left">3,216/189,426 (2)</td>
+<td align="left">   Unknown/Missing</td>
+<td align="left">3,216 (1.70%)</td>
 </tr>
 <tr class="odd">
 <td align="left"><strong>not_applicable</strong></td>
@@ -474,8 +474,8 @@ frl_fulltrain &lt;- left_join(full_train, frl)</code></pre>
 <td align="left">0</td>
 </tr>
 <tr class="even">
-<td align="left">   Unknown</td>
-<td align="left">3,216/189,426 (2)</td>
+<td align="left">   Unknown/Missing</td>
+<td align="left">3,216 (1.70%)</td>
 </tr>
 <tr class="odd">
 <td align="left"><strong>no_category_codes</strong></td>
@@ -498,8 +498,8 @@ frl_fulltrain &lt;- left_join(full_train, frl)</code></pre>
 <td align="left">920</td>
 </tr>
 <tr class="even">
-<td align="left">   Unknown</td>
-<td align="left">3,216/189,426 (2)</td>
+<td align="left">   Unknown/Missing</td>
+<td align="left">3,216 (1.70%)</td>
 </tr>
 <tr class="odd">
 <td align="left"><strong>n</strong></td>
@@ -522,8 +522,8 @@ frl_fulltrain &lt;- left_join(full_train, frl)</code></pre>
 <td align="left">3,144</td>
 </tr>
 <tr class="even">
-<td align="left">   Unknown</td>
-<td align="left">3,216/189,426 (2)</td>
+<td align="left">   Unknown/Missing</td>
+<td align="left">3,216 (1.70%)</td>
 </tr>
 </tbody>
 </table>
