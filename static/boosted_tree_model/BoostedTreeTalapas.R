@@ -119,12 +119,16 @@ wf_tune_lr <- wf_df %>%
 #grid for tuning learning rate
 grd <- expand.grid(learn_rate = seq(0.0001, 0.3, length.out = 30))
 
+metrics_eval <- metric_set(rmse, 
+                           rsq, 
+                           huber_loss)
+
 #fit model w/ tuned learning rate
 tune_tree_lr <- tune_grid(
   wf_tune_lr, 
   train_cv, 
   grid = grd,
-  metrics = metric_set(rmse, rsq),
+  metrics = metrics_eval,
   control = control_resamples(verbose = TRUE,
                               save_pred = TRUE,
                               extract = function(x) extract_model(x)))
@@ -136,18 +140,25 @@ saveRDS(tune_tree_lr, "BTTuneTalapasGrid_Tuned.Rds")
 bt_grid_met <- tune_tree_lr %>%
   collect_metrics() 
 
+bt_grid_met
+
 bt_grid_rsq <- bt_grid_met %>%
   filter(.metric == "rsq") %>%
   arrange(.metric, desc(mean)) %>%
-  slice(1:5)
+  dplyr::slice(1:5)
 
 bt_grid_rmse <- bt_grid_met %>%
   filter(.metric == "rmse") %>%
   arrange(.metric, mean) %>%
-  slice(1:5)
+  dplyr::slice(1:5)
+
+bt_grid_hl <- bt_grid_met %>%
+  filter(.metric == "huber_loss") %>%
+  arrange(.metric, mean) %>%
+  dplyr::slice(1:5)
 
 
-bt_grid_metrics <- rbind(bt_grid_rsq, bt_grid_rmse) 
+bt_grid_metrics <- rbind(bt_grid_rsq, bt_grid_rmse, bt_grid_hl) 
 
 bt_grid_metrics %>%
   write.csv("./BTTuneMetricsGrid.csv", row.names = FALSE)
