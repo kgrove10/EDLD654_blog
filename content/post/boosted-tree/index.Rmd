@@ -7,7 +7,7 @@ categories: []
 tags: []
 ---
 
-In this post, we will outline how we fit a boosted tree model to our data. 
+In this post, we will outline how we fit a boosted tree model to our data. Most of our information on boosted trees comes from our lovely Machine Learning instructors [Daniel Anderson and Joe Nese](https://uo-datasci-specialization.github.io/c4-ml-fall-2020/)
 
 ## Boosted Tree Model Description
 
@@ -16,6 +16,7 @@ In this post, we will outline how we fit a boosted tree model to our data.
 
 First, a decision tree if fit the the data, which looks like: 
 $f_1\left(x\right) = y$
+
 
 Then, a second decision tree is fit to the residuals of the first, which looks like:
 $h_1\left(x\right) = y - f_1\left(x\right)$
@@ -89,9 +90,9 @@ The model continues to move down the gradient in an iterative fashion to minimiz
 
 **Model Fitting Procedures** 
 
-First, we will start out with a default Boosted Tree Model with no hyperparameters. The arguments defined are based on recommendations from Daniel Anderson and Joe Nese. 
+A description of our data prep procedures can be found [here](https://edld654finalproject.netlify.app/2020/11/30/data-description/). The model fit was completed using the University of Oregon's "Talapas" Supercomputer, so while some example code will be included with this post, computations were conducted elsewhere, and the full code can be found on our [GitHub here](https://github.com/kgrove10/EDLD654_blog/blob/main/static/boosted_forest_model). We will start out with a default Boosted Tree Model with no hyperparameters. The arguments defined are based on recommendations from Daniel Anderson and Joe Nese. 
 
-```{r boost}
+```{r boost, eval = FALSE}
 set.seed(500)
 
 #default model without tuning
@@ -111,10 +112,7 @@ wf_df <- workflow() %>%
   add_recipe(rec) %>% 
   add_model(mod)
 
-```
-
-```{r boost2}
-#fit default boosted model
+#fit model
 fit_default <- fit_resamples(
   wf_df, 
   train_cv, 
@@ -123,12 +121,90 @@ fit_default <- fit_resamples(
                               save_pred = TRUE,
                               extract = function(x) extract_model(x)))
 
-#look at metrics of default boosted model to evaluate performance
-collect_metrics(fit_default)
+#collect metrics
+bt_def_met <- fit_default %>%
+  collect_metrics() 
+
+bt_def_met %>%
+  write.csv("./BTTuneMetricsDefault.csv", row.names = FALSE)
 
 ```
 
-Now, let's try to tune the learning rate of the model to reduce the rmse even more. 
+The metrics for the default model are: 
+
+```{r echo = FALSE, warning = FALSE, message = FALSE}
+library(rio)
+library(here)
+
+tunedres <- import(here("static", "boosted_tree_model", "BTTuneMetricsDefault.csv"))
+
+knitr::kable(tunedres)
+
+```
+
+If we were happy with this (and didn't want to tune hyperparameters), we could then apply this our workflow to our last split with the following code: 
+
+```{r eval = FALSE}
+test_fit <- last_fit(wf_df, edu_split)
+test_metrics <- test_fit$.metrics
+
+test_metrics %>%
+  write.csv("./BTTestMetrics1.csv", row.names = FALSE)
+```
+
+When our default boosted model is applied to our full training set, we get the following results: 
+
+```{r echo = FALSE}
+testres <- import(here("static", "boosted_tree_model", "BTTestMetrics1.csv"))
+
+knitr::kable(testres)
+```
+
+And then we can make our predictions on unseen data, and submit that to Kaggle with the following code: 
+
+```{r predict, eval = FALSE}
+#make predictions on test.csv using this final workflow
+full_test <- read_csv("data/test.csv",
+                      col_types = cols(.default = col_guess(), 
+                                       calc_admn_cd = col_character()))
+#str(full_test)
+
+#join with ethnicity data
+full_test_eth <- left_join(full_test, ethnicities) #join with FRL dataset
+#str(full_test_eth)
+
+#join with frl
+full_test_FRL <- left_join(full_test_eth, frl)
+
+nrow(full_test_FRL)
+
+#workflow
+fit_workflow <- fit(wf_df, frl_fulltrain)
+
+#use model to make predictions for test dataset
+preds_final <- predict(fit_workflow, full_test_FRL) #use model to make predictions for test dataset
+
+head(preds_final)
+
+pred_frame <- tibble(Id = full_test_FRL$id, Predicted = preds_final$.pred)
+head(pred_frame, 20)
+nrow(pred_frame)
+
+#create prediction file
+write_csv(pred_frame, "fit_bt.csv")
+
+```
+
+THEN SUBMIT TO KAGGLE! 
+
+
+
+
+But wait......
+
+What if we really wanted to try and reduce the rmse by tunung the hyperparameters?
+
+Let's try to tune the learning rate of the model to reduce the rmse even more using the following code:
 
 ```{r boosted tuning}
 set.seed(500)
@@ -148,8 +224,8 @@ wf_tune_lr <- wf_df %>%
   update_model(tune_lr)
 ```
 
-```{r boost4, eval = FALSE}
 
+```{r boost4, eval = FALSE}
 #grid for tuning learning rate
 grd <- expand.grid(learn_rate = seq(0.0001, 0.3, length.out = 30))
 
@@ -163,6 +239,42 @@ tune_tree_lr <- tune_grid(
                               save_pred = TRUE,
                               extract = function(x) extract_model(x)))
 
+#let's collect metrics
+#collect metrics
+bt_grid_met <- tune_tree_lr %>%
+  collect_metrics() 
+
+bt_grid_rsq <- bt_grid_met  %>%
+  filter(.metric == "rsq") %>%
+  arrange(.metric, desc(mean)) %>%
+  slice(1:5)
+
+bt_grid_rmse <- bt_grid_met %>%
+  filter(.metric == "rmse") %>%
+  arrange(.metric, mean) %>%
+  slice(1:5)
+
+bt_grid_metrics <- rbind(bt_grid_rsq, bt_grid_rmse) 
+
+bt_grid_metrics %>%
+  write.csv("./BTTuneMetricsGrid_Tuned.csv", row.names = FALSE)
+
+```
+
+It looks like we got the following metrics for our model:
+
+```{r echo = FALSE, warning = FALSE, message = FALSE}
+library(rio)
+library(here)
+
+tunedres <- import(here("static", "boosted_forest_model", "BTTuneMetricsGrid_Tuned.csv"))
+
+knitr::kable(tunedres)
+```
+
+It looks like the best model is XXX. Let's create a plot using the following code: 
+
+```{r plot}
 #Let's plot
 to_plot <- tune_tree_lr %>% 
   unnest(.metrics) %>% 
@@ -181,20 +293,12 @@ ggplot(to_plot, aes(learn_rate, mean)) +
   geom_point(color = "#de4f69", data = highlight) +
   facet_wrap(~.metric, scales = "free_y")
 
-#Let's check out the metrics of the model
-tune_tree_lr %>% 
-  collect_metrics() %>% 
-  group_by(.metric) %>% 
-  arrange(mean) %>% 
-  dplyr::slice(1)
+```
 
-#Not let's look at the model with the best rmse
-best_rmse <- tune_tree_lr %>% 
-  select_best(metric = "rmse")
+According to this visualization, it looks like XX is the best learning rate
 
-tune_tree_lr %>% 
-  collect_metrics() %>% 
-  semi_join(best_rmse)
+```{r viz, echo=FALSE}
+blogdown::shortcode("figure", src ='"/boosted_forest_model/BTMetricsGrid_Tuned.pdf"', alt = "Tuned Metrics Visualization")
 
 ```
 
@@ -203,7 +307,10 @@ If we wanted to now finalize our model and apply it to our test data to make pre
 
 ```{r final model, eval = FALSE}
 
-#Finalize our workflow
+#Now let's select best model and finalize our workflow
+best_rmse <- tune_tree_lr %>% 
+  select_best(metric = "rmse")
+
 bt_wf_final <- finalize_workflow(
   wf_tune_lr,
   best_rmse)
@@ -213,20 +320,21 @@ test_fit <- last_fit(bt_wf_final, edu_split)
 test_metrics <- test_fit$.metrics
 
 test_metrics %>%
-  write.csv("./BTTestMetrics.csv", row.names = FALSE)
+  write.csv("./BTTestMetrics_Tuned.csv", row.names = FALSE)
 ```
+
+**Model Fitting Results**
 
 Our final workflow applied to the full training dataset gives us the following results:
 
-```{r , eval = FALSE}
-testres <- import(here("static", "boosted_tree_model", "BTTestMetrics.csv"))
+```{r , echo = FALSE}
+testres <- import(here("static", "boosted_tree_model", "BTTestMetrics_Tuned.csv"))
 
 knitr::kable(testres)
-
 ```
 
 
-**Model Fitting Results**
+
 
 
 
