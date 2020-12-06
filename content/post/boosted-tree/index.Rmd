@@ -206,7 +206,7 @@ What if we really wanted to try and reduce the rmse by tunung the hyperparameter
 
 Let's try to tune the learning rate of the model to reduce the rmse even more using the following code:
 
-```{r boosted tuning}
+```{r boosted tuning, eval = FALSE}
 set.seed(500)
 
 #tuned model
@@ -274,7 +274,7 @@ knitr::kable(tunedres)
 
 It looks like the best model is XXX. Let's create a plot using the following code: 
 
-```{r plot}
+```{r plot, eval = FALSE}
 #Let's plot
 to_plot <- tune_tree_lr %>% 
   unnest(.metrics) %>% 
