@@ -47,9 +47,6 @@ frl <- read_csv("data/frl_stucounts.csv")
 # add frl data to train data
 frl_fulltrain <- left_join(full_train, frl)
 
-#dim(frl_fulltrain)
-
-#split data and resample
 
 library(tidymodels)
 library(xgboost)
@@ -96,102 +93,37 @@ wf_df <- workflow() %>%
   add_model(mod)
 
 
-#tuned model
-tune_lr <- mod %>% 
-  set_args(trees = 5000, #number of trees in the ensemble
-           stop_iter = 20, #the number of iterations without improvement before stopping
-           validation = 0.2,
-           learn_rate = tune()) #the rate at which boosting algoirithm adapts at each iteration
-
-
 #let's get a sense of what this tuned model looks like
-translate(tune_lr)
+translate(mod)
 
-#create workflow for tuned model
-wf_tune_lr <- wf_df %>% 
-  update_model(tune_lr)
-
-#grid for tuning learning rate
-grd <- expand.grid(learn_rate = seq(0.0001, 0.3, length.out = 30))
 
 #fit model w/ tuned learning rate
-tune_tree_lr <- tune_grid(
-  wf_tune_lr, 
+tune_tree_lr <- fit_resamples(
+  wf_df, 
   train_cv, 
-  grid = grd,
   metrics = metric_set(rmse, rsq),
   control = control_resamples(verbose = TRUE,
                               save_pred = TRUE,
                               extract = function(x) extract_model(x)))
 
-saveRDS(tune_tree_lr, "BTTuneTalapasGrid.Rds")
+saveRDS(tune_tree_lr, "BTTuneTalapasGrid1.Rds")
 
 
 #collect metrics
 bt_grid_met <- tune_tree_lr %>%
   collect_metrics() 
 
-bt_grid_rsq <- tune_tree_lr %>%
-  filter(.metric == "rsq") %>%
-  arrange(.metric, desc(mean)) %>%
-  slice(1:5)
+bt_grid_met %>%
+  write.csv("./BTTuneMetricsDefault.csv", row.names = FALSE)
 
-bt_grid_rmse <- tune_tree_lr %>%
-  filter(.metric == "rmse") %>%
-  arrange(.metric, mean) %>%
-  slice(1:5)
-
-bt_grid_hl <- tune_tree_lr %>%
-  filter(.metric == "huber_loss") %>%
-  arrange(.metric, mean) %>%
-  slice(1:5)
-
-bt_grid_metrics <- rbind(bt_grid_rsq, bt_grid_rmse, bt_grid_hl) 
-
-bt_grid_metrics %>%
-  write.csv("./BTTuneMetricsGrid.csv", row.names = FALSE)
-
-
-
-#Let's plot
-to_plot <- tune_tree_lr %>% 
-  unnest(.metrics) %>% 
-  group_by(.metric, learn_rate) %>% 
-  summarize(mean = mean(.estimate, na.rm = TRUE)) %>% 
-  filter(learn_rate != 0.0001) 
-
-highlight <- to_plot %>% 
-  filter(.metric == "rmse" & mean == min(mean)) %>%
-  ungroup() %>% 
-  select(learn_rate) %>% 
-  semi_join(to_plot, .)
-
-ggplot(to_plot, aes(learn_rate, mean)) +
-  geom_point() +
-  geom_point(color = "#de4f69", data = highlight) +
-  facet_wrap(~.metric, scales = "free_y")
-
-ggsave("BTMetricsGrid.pdf",
-       plot = last_plot(),
-       scale = 1)
-
-
-#Not let's look at the model with the best rmse
-best_rmse <- tune_tree_lr %>% 
-  select_best(metric = "rmse")
-
-
-bt_wf_final <- finalize_workflow(
-  wf_tune_lr,
-  best_rmse)
 
 
 #apply to test split
-test_fit <- last_fit(bt_wf_final, edu_split)
+test_fit <- last_fit(wf_df, edu_split)
 test_metrics <- test_fit$.metrics
 
 test_metrics %>%
-  write.csv("./BTTestMetrics.csv", row.names = FALSE)
+  write.csv("./BTTestMetrics1.csv", row.names = FALSE)
 
 #make predictions on test.csv using this final workflow
 full_test <- read_csv("data/test.csv",
@@ -209,7 +141,7 @@ full_test_FRL <- left_join(full_test_eth, frl)
 nrow(full_test_FRL)
 
 #workflow
-fit_workflow <- fit(bt_wf_final, frl_fulltrain)
+fit_workflow <- fit(wf_df, frl_fulltrain)
 
 #use model to make predictions for test dataset
 preds_final <- predict(fit_workflow, full_test_FRL) #use model to make predictions for test dataset
