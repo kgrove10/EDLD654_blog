@@ -299,8 +299,7 @@ ggplot(to_plot, aes(learn_rate, mean)) +
 
 
 ```{r viz, echo=FALSE}
-blogdown::shortcode("figure", src ='"plots/BTMetricsGrid_Tuned.pdf"', alt = "Tuned Metrics Visualization")
-
+blogdown::shortcode("figure", src ='"/plots/BTMetricsGrid_Tuned.pdf"', alt = "Tuned Metrics Visualization")
 ```
 
 
