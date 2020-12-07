@@ -9,7 +9,7 @@ tags: []
 
 This post will discuss the selection of our final model fit and the evidence that led us to this selection. We will first compare and contrast the three decision tree-based model fits. 
 
-Model selection is not a straight forward process because as you have seen in our previous posts, we had to make a myriad of decisions when designing and configuring a prediction model. For example, We needed to make decisions about hyperparameter tuning and the structure of the recipe among many other decisions. In almost all of these decisions, we used heuristics based on our knowledge and benchmark, tested our decisions on small fractions of data, evaluated the final metrics focusing on minimizing the RMSE, to finally apply our model to the unseen test data.  
+Model selection is not a straight forward process because as you have seen in our previous posts, we had to make a myriad of decisions when designing and configuring a prediction model. For example, we needed to make decisions about hyperparameter tuning and the structure of the recipe among many other decisions. In almost all of these decisions, we used heuristics based on our knowledge and benchmark, tested our decisions on small fractions of data, evaluated the final metrics focusing on minimizing the RMSE, to finally apply our model to the unseen test data.  
 
 Therefore, in conducting this type of model building, it is important to have a robust test harness that allows you to estimate the performance of a given model configuration on unseen data, and reliably compare the performance to other model configurations. In this post, we will attempt walk you through our comparison steps. 
 
