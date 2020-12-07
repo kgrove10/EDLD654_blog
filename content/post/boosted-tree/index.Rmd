@@ -140,7 +140,7 @@ library(here)
 
 tunedres <- import(here("static", "boosted_tree_model", "BTTuneMetricsDefault.csv"))
 
-knitr::kable(tunedres)
+knitr::kable(tunedres) 
 
 ```
 

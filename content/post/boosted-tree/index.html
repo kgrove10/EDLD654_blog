@@ -360,7 +360,7 @@ ggplot(to_plot, aes(learn_rate, mean)) +
   geom_point() +
   geom_point(color = &quot;#de4f69&quot;, data = highlight) +
   facet_wrap(~.metric, scales = &quot;free_y&quot;)</code></pre>
-{{% figure src="/boosted_tree_model/BTMetricsGrid_Tuned.pdf" alt="Tuned Metrics Visualization" %}}
+{{% figure src="plots/BTMetricsGrid_Tuned.pdf" alt="Tuned Metrics Visualization" %}}
 <p>If we wanted to now finalize our model and apply it to our test data to make predictions, we would use the following code.</p>
 <pre class="r"><code>#Now let&#39;s select best model and finalize our workflow
 best_rmse &lt;- tune_tree_lr %&gt;% 
