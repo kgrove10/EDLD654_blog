@@ -324,7 +324,7 @@ test_metrics %>%
   write.csv("./BTTestMetrics_Tuned.csv", row.names = FALSE)
 ```
 
-**Model Fitting Results**
+**Model Fitting Results** 
 
 Our final workflow applied to the full training dataset gives us the following results:
 
