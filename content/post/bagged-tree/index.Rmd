@@ -75,7 +75,7 @@ collect_metrics(fit_bag)
 
 ### Model Turning 
 
-Next, we will tune the number of trees hyperparameter. We set min_n to 2. We will use a functions that pulls multiple RMSEs and we will graph them to figure out the optimnal number of bags needed for this data.
+Next, we will tune the number of trees hyperparameter. We set min_n to 2. We will use a function that pulls multiple RMSEs and we will graph them to figure out the optimnal number of bags needed for this data. Of note, given the computational resources needed for this tunning, we will only test it on 1% of our data then apply the final number of trees to the full training and test data. 
 
 ```{r eval=FALSE}
 
@@ -119,7 +119,7 @@ ggplot(aucs, aes(b, mean)) +
 blogdown::shortcode("figure", src ='"/plots/rmse_auc.png"', alt = "RMSE AUC")
 ```
 
-We see from the plot above that setting $b$ to 175 would be the optiomal number of trees. 
+We see from the plot above that setting $b$ to 175 would be the optiomal number of trees. Note that this visualisation is based on 1% of the training data.
 
 
 ### Bagged Trees Visualization 
