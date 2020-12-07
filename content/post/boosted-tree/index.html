@@ -11,12 +11,12 @@ tags: []
 <script src="index_files/anchor-sections/anchor-sections.js"></script>
 
 
-<p>In this post, we will outline how we fit a boosted tree model to our data. Most of our information on boosted trees comes from our lovely Machine Learning instructors <a href="https://uo-datasci-specialization.github.io/c4-ml-fall-2020/">Daniel Anderson and Joe Nese</a></p>
+<p>In this post, we will outline how we fit a boosted tree model to our data. Most of our information on boosted trees comes from our lovely instructors <a href="https://uo-datasci-specialization.github.io/c4-ml-fall-2020/">Daniel Anderson and Joe Nese</a>, who taught a Machine Learning as part of the <a href="https://education.uoregon.edu/data-science-specialization-educational-leadership">Educational Data Specialization</a> at the UO.</p>
 <div id="boosted-tree-model-description" class="section level2">
 <h2>Boosted Tree Model Description</h2>
 <p><strong>What does the Boosted Tree Model do?</strong>
-“Boosting” is similar to “bagging,” (see post on bagging) in that it’s a general algorithm that can theoretically be used with many types of models. However, it’s super common with tree models (see posts on bagging and random forest models that introduce the concepts of “decision trees”), so we are going to use it here to make a Boosted Tree Model. Unlike “bagging” (which uses bootstrap resampling), boosted models are built in a sequential and iterative manner, and each subsequent model is fit to the residuals (error term) of the previous model. In other words, each tree builds upon information from the prior tree. The steps to creating a decision tree are below: (courtesy of Daniel Anderson and Joe Nese).</p>
-<p>First, a decision tree if fit the the data, which looks like:
+“Boosting” is similar to “bagging,” (see post on bagging <a href="https://edld654finalproject.netlify.app/2020/12/01/bagged-tree/">here</a>) in that it’s a general algorithm that can theoretically be used with many types of models. However, it’s super common with tree models (see posts on bagging <a href="https://edld654finalproject.netlify.app/2020/12/01/bagged-tree/">here</a> and random forest models <a href="https://edld654finalproject.netlify.app/2020/12/02/random-forest/">here</a> that introduce the concepts of “decision trees”). In this post, we are going to use it here to make a Boosted Tree Model. Unlike “bagging” (which uses bootstrap resampling), boosted models are built in a sequential and iterative manner, and each subsequent model is fit to the residuals (error term) of the previous model. In other words, each tree builds upon information from the prior tree. The steps to creating a decision tree are below: (courtesy of Daniel Anderson and Joe Nese).</p>
+<p>First, a decision tree is fit the the data, which looks like:
 <span class="math inline">\(f_1\left(x\right) = y\)</span></p>
 <p>Then, a second decision tree is fit to the residuals of the first, which looks like:
 <span class="math inline">\(h_1\left(x\right) = y - f_1\left(x\right)\)</span></p>
@@ -24,7 +24,7 @@ tags: []
 <span class="math inline">\(f_2\left(x\right) = f_1\left(x\right) + h_1\left(x\right)\)</span></p>
 <p>A new decision tree is then fit to the residuals of this model, which looks like:
 <span class="math inline">\(h_2\left(x\right) = y - f_2\left(x\right)\)</span></p>
-<p>This tree is then added to our ensemble again, which looks like :
+<p>This tree is then added to our ensemble again, which looks like:
 <span class="math inline">\(f_3\left(x\right) = f_2\left(x\right) + h_2\left(x\right)\)</span></p>
 <p>The process is repeated over and over again until we meet some specified stopping rule and we have our final model, which can be represented as:
 <span class="math display">\[
@@ -41,23 +41,24 @@ Boosted trees have SO MANY hyperparameters that can be tuned for model optimizat
 <p><em>Subsample of columns for each tree</em> - We can also tune our model to select a sample of features (columns) to be used by each tree.</p>
 <p><em>Subsample of columns for each level</em> - We can also tune our model to select a sample of features (columns) to be used by each level.</p>
 <p><em>Subsample of columns for each node/split</em> - We can also tune our model to select a sample of features (columns) to be used by each split.</p>
-<p>If you can believe it, there are even MORE hyperparameters we can consider if we use XGBoost through tidymodels to run our boosted tree model.</p>
+<p>If you can believe it, there are even <strong>MORE</strong> hyperparameters we can consider if we use <code>XGBoost</code> through <code>tidymodels</code> to run our boosted tree model.</p>
 <p><em>Loss Reduction</em> - controls the tree depth and specifies a minimum loss required for further splits. In other words, it stops growing the tree if the change in the cost function doesn’t surpass a given threshold (see below for discussion of cost function). Although values range from 0 to infinity, values 1-20 are common.</p>
 <p><em>L1 and L2 penalities</em> - also possible to add if model is continuing to overfit</p>
-<p>AND we can also very in our <em>early stopping</em> value. Although not a technical hyperparameter, it denotes a specific number of iterations that the algorithm will stop after if it’s not improving predictions. This is another way to control the algoithm speed and protect against overfitting of the data.</p>
-<p>Because we are using XGBoost through tidymodels, we will specify a large number of trees and an early stopping rule. We will then tune the learning rate, then the tree specific parameters, and then the stochastic components.</p>
+<p>AND we can also vary our <em>early stopping</em> value. Although not a technical hyperparameter, it denotes a specific number of iterations that the algorithm will stop after if it’s not improving predictions. This is another way to control the algoithm speed and protect against overfitting of the data.</p>
+<p>Because we are using <code>XGBoost</code> through <code>tidymodels</code>, we will specify a large number of trees and an early stopping rule. We will then tune the learning rate, then the tree specific parameters, and then the stochastic components.</p>
 <p><strong>Why did we select this model?</strong>
 We selected this model because, unlike random forests, which aggregate predictions across many deep trees (with a lot of splits), boosted models are slow learners. Boosted models start with a base learner that’s a shallow decision tree with only a few splits. These models may be considered “weak learners” because they learn very slowly. However, they are far from weak in the literal sense of the word! For model prediction, slow learning can have a lot of benefits; usually, it helps us find the most optimal solution.</p>
 <p>Because of this, Boosted Tree Models are usually the best Out-Of-Box (OOB) models (and they win a lot of Kaggle data prediction competitions!).</p>
 <p><strong>Boosted Tree Model Assumptions</strong>
-Boosted Tree Models rely on an optimization algorithm known as Gradient Descent. Although gradient descent is a rather complex concept, it can be thought of as a way to evaluate our predictions against a “cost function,” which then will move us in the direction with the “steepest descent.” In a tree model, gradient descent is used to iteratively build each tree from the prior trees in the most optimal way. Models that use gradient specify a cost function, such as mean squared error. Then, the partial derivative of each model parameter is calculated according to the cost function, which will define our gradient landscape and allow us to move downhill in the steepest direction.</p>
+Boosted Tree Models rely on an optimization algorithm known as Gradient Descent. Although gradient descent is a rather complex concept, it can be thought of as a way to evaluate our predictions against a “cost function,” which then will move us in the direction with the “steepest descent.” In a tree model, gradient descent is used to iteratively build each tree from the prior trees in the most optimal way. Models that use gradient descent specify a cost function, such as mean squared error. Then, the partial derivative of each model parameter is calculated according to the cost function, which will define our gradient landscape and allow us to move downhill in the steepest direction.</p>
 <p>The distance that our predictions move is influenced by the learning rate of our model, which is multiplied by these derivative values and then subtracted from the current parameter estimates. This learning rate is essentially the speed at which the algorithm steps downhill.</p>
-<p>The model continues to move down the gradient in an iterative fashion to minimize our model error until our model can’t improve any more! During each iteration, we will take a step along the gradient in the mot optimal direction to reduce the error in our predictions. Luckily, we don’t have to do any of this by hand ourselves because tidymodels will handle this for us! Bless you, tidymodels!</p>
+<p>The model continues to move down the gradient in an iterative fashion to minimize our model error until our model can’t improve any more! During each iteration, we will take a step along the gradient in the most optimal direction to reduce the error in our predictions. Luckily, we don’t have to do any of this by hand ourselves because <code>tidymodels</code> will handle this for us! Bless you, <code>tidymodels</code>!</p>
 </div>
 <div id="fitting-our-boosted-tree-model" class="section level2">
 <h2>Fitting our Boosted Tree Model</h2>
 <p><strong>Model Fitting Procedures</strong></p>
-<p>A description of our data prep procedures can be found <a href="https://edld654finalproject.netlify.app/2020/11/30/data-description/">here</a>. The model fit was completed using the University of Oregon’s “Talapas” Supercomputer, so while some example code will be included with this post, computations were conducted elsewhere, and the full code can be found on our <a href="https://github.com/kgrove10/EDLD654_blog/blob/main/static/boosted_forest_model">GitHub here</a>. We will start out with a default Boosted Tree Model with no hyperparameters. The arguments defined are based on recommendations from Daniel Anderson and Joe Nese.</p>
+<p>A description of our data preparation procedures can be found <a href="https://edld654finalproject.netlify.app/2020/11/30/data-description/">here</a>. The model fit was completed using the University of Oregon’s “Talapas” Supercomputer, so while some example code will be included with this post, computations were conducted elsewhere, and the full code can be found on our <a href="https://github.com/kgrove10/EDLD654_blog/blob/main/static/boosted_tree_model">GitHub here</a>. Unfortunately, although I would love to share the .RDS file that talapas provides us with after the model is done running, I couldn’t upload it to github because it was too big, and github wanted me to upgrade my storage.</p>
+<p>We will start out with a default Boosted Tree Model with no tuned hyperparameters. The arguments defined are based on recommendations from Daniel Anderson and Joe Nese.</p>
 <pre class="r"><code>set.seed(500)
 
 #default model without tuning
@@ -186,7 +187,7 @@ nrow(pred_frame)
 write_csv(pred_frame, &quot;fit_bt.csv&quot;)</code></pre>
 <p>THEN SUBMIT TO KAGGLE!</p>
 <p>But wait……</p>
-<p>What if we really wanted to try and reduce the rmse by tunung the hyperparameters?</p>
+<p>What if we really wanted to try and reduce the rmse by tuning the hyperparameters?</p>
 <p>Let’s try to tune the learning rate of the model to reduce the rmse even more using the following code:</p>
 <pre class="r"><code>set.seed(500)
 
@@ -234,15 +235,114 @@ bt_grid_rmse &lt;- bt_grid_met %&gt;%
 bt_grid_metrics &lt;- rbind(bt_grid_rsq, bt_grid_rmse) 
 
 bt_grid_metrics %&gt;%
-  write.csv(&quot;./BTTuneMetricsGrid_Tuned.csv&quot;, row.names = FALSE)</code></pre>
+  write.csv(&quot;./BTTuneMetricsGrid.csv&quot;, row.names = FALSE)</code></pre>
 <p>It looks like we got the following metrics for our model:</p>
-<pre class="r"><code>library(rio)
-library(here)
-
-tunedres &lt;- import(here(&quot;static&quot;, &quot;boosted_forest_model&quot;, &quot;BTTuneMetricsGrid_Tuned.csv&quot;))
-
-knitr::kable(tunedres)</code></pre>
-<p>It looks like the best model is XXX. Let’s create a plot using the following code:</p>
+<table>
+<thead>
+<tr class="header">
+<th align="right">learn_rate</th>
+<th align="left">.metric</th>
+<th align="left">.estimator</th>
+<th align="right">mean</th>
+<th align="right">n</th>
+<th align="right">std_err</th>
+<th align="left">.config</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="right">0.0828310</td>
+<td align="left">rsq</td>
+<td align="left">standard</td>
+<td align="right">0.4605314</td>
+<td align="right">10</td>
+<td align="right">0.0019007</td>
+<td align="left">Preprocessor1_Model09</td>
+</tr>
+<tr class="even">
+<td align="right">0.0518069</td>
+<td align="left">rsq</td>
+<td align="left">standard</td>
+<td align="right">0.4603968</td>
+<td align="right">10</td>
+<td align="right">0.0019518</td>
+<td align="left">Preprocessor1_Model06</td>
+</tr>
+<tr class="odd">
+<td align="right">0.1138552</td>
+<td align="left">rsq</td>
+<td align="left">standard</td>
+<td align="right">0.4603554</td>
+<td align="right">10</td>
+<td align="right">0.0019941</td>
+<td align="left">Preprocessor1_Model12</td>
+</tr>
+<tr class="even">
+<td align="right">0.0311241</td>
+<td align="left">rsq</td>
+<td align="left">standard</td>
+<td align="right">0.4601135</td>
+<td align="right">10</td>
+<td align="right">0.0017949</td>
+<td align="left">Preprocessor1_Model04</td>
+</tr>
+<tr class="odd">
+<td align="right">0.0931724</td>
+<td align="left">rsq</td>
+<td align="left">standard</td>
+<td align="right">0.4601047</td>
+<td align="right">10</td>
+<td align="right">0.0020148</td>
+<td align="left">Preprocessor1_Model10</td>
+</tr>
+<tr class="even">
+<td align="right">0.0828310</td>
+<td align="left">rmse</td>
+<td align="left">standard</td>
+<td align="right">84.9262587</td>
+<td align="right">10</td>
+<td align="right">0.2920822</td>
+<td align="left">Preprocessor1_Model09</td>
+</tr>
+<tr class="odd">
+<td align="right">0.0518069</td>
+<td align="left">rmse</td>
+<td align="left">standard</td>
+<td align="right">84.9354897</td>
+<td align="right">10</td>
+<td align="right">0.2925249</td>
+<td align="left">Preprocessor1_Model06</td>
+</tr>
+<tr class="even">
+<td align="right">0.1138552</td>
+<td align="left">rmse</td>
+<td align="left">standard</td>
+<td align="right">84.9397766</td>
+<td align="right">10</td>
+<td align="right">0.3012949</td>
+<td align="left">Preprocessor1_Model12</td>
+</tr>
+<tr class="odd">
+<td align="right">0.0311241</td>
+<td align="left">rmse</td>
+<td align="left">standard</td>
+<td align="right">84.9563442</td>
+<td align="right">10</td>
+<td align="right">0.2769502</td>
+<td align="left">Preprocessor1_Model04</td>
+</tr>
+<tr class="even">
+<td align="right">0.0931724</td>
+<td align="left">rmse</td>
+<td align="left">standard</td>
+<td align="right">84.9614124</td>
+<td align="right">10</td>
+<td align="right">0.3004549</td>
+<td align="left">Preprocessor1_Model10</td>
+</tr>
+</tbody>
+</table>
+<p>It looks like a learn rate of 0.0828310 gives us our best rmse and rsq values! Let’s create a plot using the following code:</p>
 <pre class="r"><code>#Let&#39;s plot
 to_plot &lt;- tune_tree_lr %&gt;% 
   unnest(.metrics) %&gt;% 
@@ -260,8 +360,7 @@ ggplot(to_plot, aes(learn_rate, mean)) +
   geom_point() +
   geom_point(color = &quot;#de4f69&quot;, data = highlight) +
   facet_wrap(~.metric, scales = &quot;free_y&quot;)</code></pre>
-<p>According to this visualization, it looks like XX is the best learning rate</p>
-<pre class="r"><code>blogdown::shortcode(&quot;figure&quot;, src =&#39;&quot;/boosted_forest_model/BTMetricsGrid_Tuned.pdf&quot;&#39;, alt = &quot;Tuned Metrics Visualization&quot;)</code></pre>
+{{% figure src="/boosted_tree_model/BTMetricsGrid_Tuned.pdf" alt="Tuned Metrics Visualization" %}}
 <p>If we wanted to now finalize our model and apply it to our test data to make predictions, we would use the following code.</p>
 <pre class="r"><code>#Now let&#39;s select best model and finalize our workflow
 best_rmse &lt;- tune_tree_lr %&gt;% 
@@ -279,10 +378,33 @@ test_metrics %&gt;%
   write.csv(&quot;./BTTestMetrics_Tuned.csv&quot;, row.names = FALSE)</code></pre>
 <p><strong>Model Fitting Results</strong></p>
 <p>Our final workflow applied to the full training dataset gives us the following results:</p>
-<pre class="r"><code>testres &lt;- import(here(&quot;static&quot;, &quot;boosted_tree_model&quot;, &quot;BTTestMetrics_Tuned.csv&quot;))
-
-knitr::kable(testres)</code></pre>
-<p>SPECIAL NOTE: if we wanted to tune other hyperparameters because we are really ambitious, we could use the following code (although we did not do this for our model predictions because it just took way too long!).</p>
+<table>
+<thead>
+<tr class="header">
+<th align="left">.metric</th>
+<th align="left">.estimator</th>
+<th align="right">.estimate</th>
+<th align="left">.config</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">rmse</td>
+<td align="left">standard</td>
+<td align="right">85.2073125</td>
+<td align="left">Preprocessor1_Model1</td>
+</tr>
+<tr class="even">
+<td align="left">rsq</td>
+<td align="left">standard</td>
+<td align="right">0.4645603</td>
+<td align="left">Preprocessor1_Model1</td>
+</tr>
+</tbody>
+</table>
+<p>Then we would follow a similar procedure as above to submit to predict on our unseen data and submit to Kaggle!</p>
+<p>SPECIAL NOTE: However……</p>
+<p>If we wanted to tune other hyperparameters because we are really ambitious, we could use the following code (although we did not execute this code for our model predictions because it just took way too long!!!!).</p>
 <pre class="r"><code>set.seed(500)
 
 #new hyperparameters to tune
@@ -352,7 +474,7 @@ grd &lt;- grid_max_entropy(finalize(mtry(),
 tune_tree_rand &lt;- tune_grid(
   wf_tune_rand, 
   train_cv, 
-  grid = grd)
+  grid = grd)  
 
 #plot
 autoplot(tune_tree_rand)
@@ -377,5 +499,5 @@ final_lr &lt;- tune_grid(wf_final_lr, cv, grid = 30)
 autoplot(final_lr)
 
 #show best
-show_best(final_lr, &quot;rmse&quot;) </code></pre>
+show_best(final_lr, &quot;rmse&quot;)</code></pre>
 </div>
