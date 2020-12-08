@@ -186,6 +186,7 @@ nrow(pred_frame)
 #create prediction file
 write_csv(pred_frame, &quot;fit_bt.csv&quot;)</code></pre>
 <p>THEN SUBMIT TO KAGGLE!</p>
+<p>(Note that for computational efficiency, since this model had to be run on Talapas, we generated these predictions after fitting and tuning each of our models, but only submitted the predictions for the testing set on Kaggle that corresponded to the model with the best rmse based on our validation set. For more information, see our <a href="https://edld654finalproject.netlify.app/2020/12/05/final-model-fit/">final fit post</a>.)</p>
 <p>But wait……</p>
 <p>What if we really wanted to try and reduce the rmse by tuning the hyperparameters?</p>
 <p>Let’s try to tune the learning rate of the model to reduce the rmse even more using the following code:</p>
@@ -500,33 +501,4 @@ autoplot(final_lr)
 
 #show best
 show_best(final_lr, &quot;rmse&quot;)</code></pre>
-<p>Finally, as in our bagged tree and random forest models, we used the following code to make predictions for the test dataset, <code>test.csv</code> from the tuned and untuned boosted tree model. Note that for computational efficiency, since the other models had to be run on Talapas, we generated these predictions for each of our models, but only submitted the predictions for the testing set on Kaggle that corresponded to the model with the best rmse based on our validation set. For more information, see our <a href="https://edld654finalproject.netlify.app/2020/12/05/final-model-fit/">final fit post</a>.</p>
-<pre class="r"><code>#use untuned model to make predictions for test dataset
-preds_final &lt;- predict(fit_workflow, full_test_FRL) #use model to make predictions for test dataset
-
-saveRDS(preds_final, &quot;BTPreds.Rds&quot;)
-
-head(preds_final)
-
-pred_frame &lt;- tibble(Id = full_test_FRL$id, Predicted = preds_final$.pred)
-head(pred_frame, 20)
-nrow(pred_frame)
-
-#create prediction file
-write_csv(pred_frame, &quot;fit_bt.csv&quot;)
-
-
-#use tuned model to make predictions for test dataset
-preds_final &lt;- predict(fit_workflow, full_test_FRL) #use model to make predictions for test dataset
-
-saveRDS(preds_final, &quot;BTPreds_Tuned.Rds&quot;)
-
-head(preds_final)
-
-pred_frame &lt;- tibble(Id = full_test_FRL$id, Predicted = preds_final$.pred)
-head(pred_frame, 20)
-nrow(pred_frame)
-
-#create prediction file
-write_csv(pred_frame, &quot;fit_bt_Tuned.csv&quot;)</code></pre>
 </div>

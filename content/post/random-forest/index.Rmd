@@ -243,7 +243,7 @@ knitr::kable(testres)
 
 In order to best compare our models, it's also important to note how long tuning and fitting this model took. Using Talapas, this process took 22911.134 seconds, or approximately `r round(22911.134/60/60, 2)` hours, which is quite computationally expensive!  You can read about our final model choice and fit [here](https://edld654finalproject.netlify.app/2020/12/03/final-model-fit/). 
 
-Finally, the code below describes how we then generated score predictions for the testing set, `test.csv` based on the tuned random forest model, using the final workflow created above. Note that for computational efficiency, since the other models had to be run on Talapas, we generated these predictions for each of our models, but only submitted the predictions for the testing set on Kaggle that corresponded to the model with the best rmse based on our validation set. For more information, see our [final fit post](https://edld654finalproject.netlify.app/2020/12/05/final-model-fit/).   
+Finally, the code below describes how we then generated score predictions for the testing set, `test.csv` based on the tuned random forest model, using the final workflow created above. Note that for computational efficiency, since this model had to be run on Talapas, we generated these predictions after fitting and tuning each of our models, but only submitted the predictions for the testing set on Kaggle that corresponded to the model with the best rmse based on our validation set. For more information, see our [final fit post](https://edld654finalproject.netlify.app/2020/12/05/final-model-fit/).   
 
 ```{r eval = FALSE}
 #make predictions on test.csv using this final workflow

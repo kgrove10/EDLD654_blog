@@ -199,8 +199,7 @@ write_csv(pred_frame, "fit_bt.csv")
 
 THEN SUBMIT TO KAGGLE! 
 
-
-
+(Note that for computational efficiency, since this model had to be run on Talapas, we generated these predictions after fitting and tuning each of our models, but only submitted the predictions for the testing set on Kaggle that corresponded to the model with the best rmse based on our validation set. For more information, see our [final fit post](https://edld654finalproject.netlify.app/2020/12/05/final-model-fit/).)
 
 But wait......
 
@@ -447,38 +446,4 @@ autoplot(final_lr)
 show_best(final_lr, "rmse")
 
 ```
-
-Finally, as in our bagged tree and random forest models, we used the following code to make predictions for the test dataset, `test.csv` from the tuned and untuned boosted tree model. Note that for computational efficiency, since the other models had to be run on Talapas, we generated these predictions for each of our models, but only submitted the predictions for the testing set on Kaggle that corresponded to the model with the best rmse based on our validation set. For more information, see our [final fit post](https://edld654finalproject.netlify.app/2020/12/05/final-model-fit/).   
-
-```{r finalfit, eval = FALSE}
-#use untuned model to make predictions for test dataset
-preds_final <- predict(fit_workflow, full_test_FRL) #use model to make predictions for test dataset
-
-saveRDS(preds_final, "BTPreds.Rds")
-
-head(preds_final)
-
-pred_frame <- tibble(Id = full_test_FRL$id, Predicted = preds_final$.pred)
-head(pred_frame, 20)
-nrow(pred_frame)
-
-#create prediction file
-write_csv(pred_frame, "fit_bt.csv")
-
-
-#use tuned model to make predictions for test dataset
-preds_final <- predict(fit_workflow, full_test_FRL) #use model to make predictions for test dataset
-
-saveRDS(preds_final, "BTPreds_Tuned.Rds")
-
-head(preds_final)
-
-pred_frame <- tibble(Id = full_test_FRL$id, Predicted = preds_final$.pred)
-head(pred_frame, 20)
-nrow(pred_frame)
-
-#create prediction file
-write_csv(pred_frame, "fit_bt_Tuned.csv")
-```
-
 
