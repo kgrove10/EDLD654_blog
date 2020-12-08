@@ -49,7 +49,7 @@ We will evaluate the performance of this model after training by applying it to 
 
 To fit our random forest model, we first imported and split the data, and applied our recipe, as described [here](https://edld654finalproject.netlify.app/2020/11/30/data-description/). The model fit was completed using the University of Oregon's "Talapas" Supercomputer, so while some example code will be included with this post, computations were conducted elsewhere, and the full code can be found on our [GitHub here](https://github.com/kgrove10/EDLD654_blog/blob/main/static/random_forest_model/RF_Talapas.R). 
 
-First, we started by coding a random forest model. For this, we utilized the function `rand_forest()` from the `parsnip` package. In this code, we set our engine to `"ranger"`, which offers fast implementation of random forests. Since it supports both classification and regression, we need to specify regression in the piped function `set_mode()`. While setting our engine, we also specify several arguments from ranger, including the number of threads, or the number of distinct processes running in parallel. In this case, we set it equal to the number of cores, so each core is executing one thing independently. If running locally, we could run `parallel::detectCores()`, but since we're running this code on talapas, we manually set it to the number of cores talapas possesses, 8. The argument `importance = "permutation"` is set to specify the variable importance mode. The default is `impurity` which is the Gini index, or the probability of a variable being wrongly classified when it is randomly chosen, but we set it here to be `permutation` instead.  The issue with impurity-based feature importance is that it can inflate the importance of numeric features over categorical features. Since we have both in our model, we chose to use `permutation`, which is more reliable that impurity, because it instead calculates the importance of a feature based on the increase in the model's prediction error after permuting the feature. The downside of permutation is that it is more computationally demanding, and potentially biased toward collinear predictors. 
+First, we started by coding a random forest model. For this, we utilized the function `rand_forest()` from the `parsnip` package. In this code, we set our engine to `"ranger"`, which offers fast implementation of random forests. Since it supports both classification and regression, we need to specify regression in the piped function `set_mode()`. While setting our engine, we also specify several arguments from ranger, including the number of threads, or the number of distinct processes running in parallel. In this case, we set it equal to the number of cores, so each core is executing one thing independently. If running locally, we could run `parallel::detectCores()`, but since we're running this code on Talapas, we manually set it to the number of cores Talapas possesses, 8. The argument `importance = "permutation"` is set to specify the variable importance mode. The default is `impurity` which is the Gini index, or the probability of a variable being wrongly classified when it is randomly chosen, but we set it here to be `permutation` instead.  The issue with impurity-based feature importance is that it can inflate the importance of numeric features over categorical features. Since we have both in our model, we chose to use `permutation`, which is more reliable that impurity, because it instead calculates the importance of a feature based on the increase in the model's prediction error after permuting the feature. The downside of permutation is that it is more computationally demanding, and potentially biased toward collinear predictors. 
 
 ```{r eval = FALSE}
 cores <- 8
@@ -123,7 +123,7 @@ rf_tune_res <- tune_grid(
                               extract = function(x) extract_model(x)))
 ```
 
-Once this runs (it took about 4 hours on talapas), we can collect the metrics from our model. The code below gathers the best 5 models based on `rsq`, `rmse`, and `huber_loss` (note that "best" for rmse and huber loss is lower values, while "best" for rsq is higher values, and thus we reverse the order before slicing the top values for rmse). We then bind these values together and save them as a .csv so I can include the results in this blog post. 
+Once this runs (it took about 4 hours on Talapas), we can collect the metrics from our model. The code below gathers the best 5 models based on `rsq`, `rmse`, and `huber_loss` (note that "best" for rmse and huber loss is lower values, while "best" for rsq is higher values, and thus we reverse the order before slicing the top values for rmse). We then bind these values together and save them as a .csv so I can include the results in this blog post. 
 
 ```{r eval = FALSE}
 rf_tune_met <- rf_tune_res %>%
@@ -179,7 +179,7 @@ blogdown::shortcode("figure", src ='"/random_forest_model/RFTunedMetrics.pdf"', 
 
 As we can see from these results, our best model, according to all three of our metrics is Model 01, with `mtry` = 5, `trees` = 1323, and `min_n` = 38. 
 
-This is in line with the general guidelines for these predictors: `mtry` between 2 and `p` (representing the number of predictors in the data), `trees` at least 1000, and `min_n` starting between 1 and 10 and adjust depending on impact to accuracy and run time. Here, our `min_n` is much larger, but as we can see from the visualization, our metrics argely improve as the value of `min_n` increases. In fact, we could consider increasing beyond the tuned value of 38, since it still appears to be decreasing, but in the interest of computational expense, we will stick with this selected value of 38. 
+This is in line with the general guidelines for these predictors: `mtry` between 2 and `p` (representing the number of predictors in the data), `trees` at least 1000, and `min_n` starting between 1 and 10 and adjust depending on impact to accuracy and run time. Here, our `min_n` is much larger, but as we can see from the visualization, our metrics largely improve as the value of `min_n` increases. In fact, we could consider increasing beyond the tuned value of 38, since it still appears to be decreasing, but in the interest of computational expense, we will stick with this selected value of 38. 
 
 We then select the best results using `select_best`, based on the `rmse` metric (although in this case, all our metrics are in agreement), and will use these hyperparameter values going forward.  
 
@@ -217,13 +217,13 @@ Now, our workflow looks like this:
         min.node.size = 38, num.threads = cores, importance = "permutation", 
         verbose = TRUE, seed = sample.int(10^5, 1))
 
-
+ 
 
 **Model Fitting Results**
 
 Finally, in order to get the results of our model with these tuned hyperparameter values, we will apply this model to our full training dataset, `edu_split`.
 
-We do this using the following code, which applies the final workflow we created above to our full training dataset using the function `last_fit()`. From this fit, we then extract just the metrics (and save them) in order to compare the results of this random forest model with our bagged tree and boosted tree model in order to choose a final model to make student score predictions from the test data (`test.csv`) and to submit to kaggle. 
+We do this using the following code, which applies the final workflow we created above to our full training dataset using the function `last_fit()`. From this fit, we then extract just the metrics (and save them) in order to compare the results of this random forest model with our bagged tree and boosted tree model in order to choose a final model to make student score predictions from the test data (`test.csv`) and to submit to Kaggle. 
 
 ```{r eval = FALSE}
 test_fit <- last_fit(rf_wf_final, edu_split)
@@ -241,7 +241,46 @@ testres <- import(here("static", "random_forest_model", "RFTestMetrics.csv"))
 knitr::kable(testres)
 ```
 
-In order to best compare our models, it's also important to note how long tuning and fitting this model took. Using talapas, this process took 22911.134 seconds, or approximately `r round(22911.134/60/60, 2)` hours, which is quite computationally expensive!  You can read about our final model choice and fit [here](https://edld654finalproject.netlify.app/2020/12/03/final-model-fit/). 
+In order to best compare our models, it's also important to note how long tuning and fitting this model took. Using Talapas, this process took 22911.134 seconds, or approximately `r round(22911.134/60/60, 2)` hours, which is quite computationally expensive!  You can read about our final model choice and fit [here](https://edld654finalproject.netlify.app/2020/12/03/final-model-fit/). 
+
+Finally, the code below describes how we then generated score predictions for the testing set, `test.csv` based on the tuned random forest model, using the final workflow created above. Note that for computational efficiency, since the other models had to be run on Talapas, we generated these predictions for each of our models, but only submitted the predictions for the testing set on Kaggle that corresponded to the model with the best rmse based on our validation set. For more information, see our [final fit post](https://edld654finalproject.netlify.app/2020/12/05/final-model-fit/).   
+
+```{r eval = FALSE}
+#make predictions on test.csv using this final workflow
+full_test <- read_csv("data/test.csv",
+                      col_types = cols(.default = col_guess(),
+                                       calc_admn_cd = col_character()))
+
+#join with ethnicity data
+full_test_eth <- left_join(full_test, ethnicities) #join with FRL dataset
+#str(full_test_eth)
+
+#join with frl
+full_test_FRL <- left_join(full_test_eth, frl)
+
+nrow(full_test_FRL)
+
+#workflow
+fit_workflow <- fit(rf_wf_final, frl_fulltrain)
+
+#use model to make predictions for test.csv dataset
+preds_final <- predict(fit_workflow, full_test_FRL) 
+
+#save predictions as Rds object
+saveRDS(preds_final, "RF_Preds.Rds")
+
+#examine start of predictions to make sure they are in the format we expect
+head(preds_final)
+
+#add ids to prediction frame for kaggle submission (if RF model has best rmse)
+pred_frame <- tibble(Id = full_test_FRL$id, Predicted = preds_final$.pred)
+
+#double check length of prediction frame is what we expect, 63142 rows
+nrow(pred_frame)
+
+#create prediction file
+write_csv(pred_frame, "rf_fit.csv")
+```
 
 
 

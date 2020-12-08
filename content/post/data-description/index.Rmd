@@ -127,7 +127,7 @@ frl_fulltrain <- left_join(full_train, frl)
 ```
 
 Now our three datasets are all loaded, cleaned, and joined together to make one cohesive data set we will use for all three of our tree-based models. Before we move on to preparing the data for modeling, let's explore and describe the variables present in our joined data set, `frl_fulltrain`. The [data dictionary](https://github.com/kgrove10/EDLD654_blog/blob/main/static/data/data_dictionary.csv) for the main data (`test.csv` and `train.csv`) is also available on our github. 
-
+ 
 Each row of our data corresponds to an individual student observation. However, the data contained in each row includes both student-level variables, such as the student's grade, gender, ethnicity, and enrollment in various programs, as well as school-level and district-level data, such as school ethnicity proportions and the proportion of students who qualify for free or reduced lunch programs. A detailed data dictionary for the initial `train.csv` data can be found [here](https://www.kaggle.com/c/edld-654-fall-2020/data?select=data_dictionary.csv), but we will attempt to provide a brief description and overview of the 52 variables present in our `frl_fulltrain` data each of our three tree-based models will rely upon. 
 
 Overall, our data consists of 17 numeric variables, 6 id variables, 1 date variable, and 28 categorical variables. 
@@ -323,7 +323,7 @@ When we prep our recipe, the output shows us exactly what our recipe is doing, a
 
 ## Preview of what is to come: Setting up a model and workflow 
 
-Finally, we're ready to create a model! This is discussed with more specificity for each model on their respective blog posts, but there are several common elemetns we will need to specify for each of our models.
+Finally, we're ready to create a model! This is discussed with more specificity for each model on their respective blog posts, but there are several common elements we will need to specify for each of our models.
 
 (1) The model type: in this blog, we focus on three tree models, namely `bag_tree()`, `random_forest()` and `boost_tree()`.
 (2) The engine: using `set_engine()` we specify which package or system will be used to fit the model

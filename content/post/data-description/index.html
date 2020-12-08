@@ -27,7 +27,7 @@ library(rio) # import data
 library(tidymodels) # main modeling package
 library(skimr) # create data visualizations
 library(knitr) # create tables</code></pre>
-<p>Next, we’re going to read in the data. When we are importing the data, we will also sightly clean it. For example, with the fall membership 2019-2020 student enrollment report, we will update the names of columns to be in snake case to both match the names of our variable names in our main, <code>train.csv</code> data (e.g. “Attending School ID” becomes “attnd_schl_inst_id”), and to make these variables easier to work with in R. When importing our free and reduced lunch data, we clean names, and also replace missing data with 0s for student counts. Below, we will go over each of the variables present in our data.</p>
+<p>Next, we’re going to read in the data. When we are importing the data, we will also sightly clean it. For example, with the fall membership 2019-2020 student enrollment report, we will update the names of columns to be in snake case to both match the names of our variable names in our main, <code>train.csv</code> data (e.g. “Attending School ID” becomes “attnd_schl_inst_id”), and to make these variables easier to work with in R. When importing our free and reduced lunch data, we clean names, and also replace missing data with 0s for student counts. Below, we will go over each of the variables present in our data.</p>
 <pre class="r"><code>set.seed(500)
 # import our training data, remove the classification column, since we are interested in score, not student classification
 full_train &lt;- read_csv(&quot;data/train.csv&quot;,
@@ -186,8 +186,8 @@ frl_fulltrain &lt;- left_join(full_train, frl)</code></pre>
 <td align="left">46.18</td>
 </tr>
 <tr class="even">
-<td align="left">   Unknown/Missing</td>
-<td align="left">3,400 (1.79%)</td>
+<td align="left">   Unknown</td>
+<td align="left">3,400/189,426 (2)</td>
 </tr>
 <tr class="odd">
 <td align="left"><strong>lon</strong></td>
@@ -210,8 +210,8 @@ frl_fulltrain &lt;- left_join(full_train, frl)</code></pre>
 <td align="left">-116.94</td>
 </tr>
 <tr class="even">
-<td align="left">   Unknown/Missing</td>
-<td align="left">3,400 (1.79%)</td>
+<td align="left">   Unknown</td>
+<td align="left">3,400/189,426 (2)</td>
 </tr>
 <tr class="odd">
 <td align="left"><strong>p_american_indian_alaska_native</strong></td>
@@ -234,8 +234,8 @@ frl_fulltrain &lt;- left_join(full_train, frl)</code></pre>
 <td align="left">0.88</td>
 </tr>
 <tr class="even">
-<td align="left">   Unknown/Missing</td>
-<td align="left">154 (0.08%)</td>
+<td align="left">   Unknown</td>
+<td align="left">154/189,426 (0)</td>
 </tr>
 <tr class="odd">
 <td align="left"><strong>p_asian</strong></td>
@@ -258,8 +258,8 @@ frl_fulltrain &lt;- left_join(full_train, frl)</code></pre>
 <td align="left">0.62</td>
 </tr>
 <tr class="even">
-<td align="left">   Unknown/Missing</td>
-<td align="left">154 (0.08%)</td>
+<td align="left">   Unknown</td>
+<td align="left">154/189,426 (0)</td>
 </tr>
 <tr class="odd">
 <td align="left"><strong>p_native_hawaiian_pacific_islander</strong></td>
@@ -282,8 +282,8 @@ frl_fulltrain &lt;- left_join(full_train, frl)</code></pre>
 <td align="left">0.33</td>
 </tr>
 <tr class="even">
-<td align="left">   Unknown/Missing</td>
-<td align="left">154 (0.08%)</td>
+<td align="left">   Unknown</td>
+<td align="left">154/189,426 (0)</td>
 </tr>
 <tr class="odd">
 <td align="left"><strong>p_black_african_american</strong></td>
@@ -306,8 +306,8 @@ frl_fulltrain &lt;- left_join(full_train, frl)</code></pre>
 <td align="left">0.50</td>
 </tr>
 <tr class="even">
-<td align="left">   Unknown/Missing</td>
-<td align="left">154 (0.08%)</td>
+<td align="left">   Unknown</td>
+<td align="left">154/189,426 (0)</td>
 </tr>
 <tr class="odd">
 <td align="left"><strong>p_hispanic_latino</strong></td>
@@ -330,8 +330,8 @@ frl_fulltrain &lt;- left_join(full_train, frl)</code></pre>
 <td align="left">1.00</td>
 </tr>
 <tr class="even">
-<td align="left">   Unknown/Missing</td>
-<td align="left">154 (0.08%)</td>
+<td align="left">   Unknown</td>
+<td align="left">154/189,426 (0)</td>
 </tr>
 <tr class="odd">
 <td align="left"><strong>p_white</strong></td>
@@ -354,8 +354,8 @@ frl_fulltrain &lt;- left_join(full_train, frl)</code></pre>
 <td align="left">1.00</td>
 </tr>
 <tr class="even">
-<td align="left">   Unknown/Missing</td>
-<td align="left">154 (0.08%)</td>
+<td align="left">   Unknown</td>
+<td align="left">154/189,426 (0)</td>
 </tr>
 <tr class="odd">
 <td align="left"><strong>p_multiracial</strong></td>
@@ -378,8 +378,8 @@ frl_fulltrain &lt;- left_join(full_train, frl)</code></pre>
 <td align="left">0.35</td>
 </tr>
 <tr class="even">
-<td align="left">   Unknown/Missing</td>
-<td align="left">154 (0.08%)</td>
+<td align="left">   Unknown</td>
+<td align="left">154/189,426 (0)</td>
 </tr>
 <tr class="odd">
 <td align="left"><strong>free_lunch_qualified</strong></td>
@@ -402,8 +402,8 @@ frl_fulltrain &lt;- left_join(full_train, frl)</code></pre>
 <td align="left">813</td>
 </tr>
 <tr class="even">
-<td align="left">   Unknown/Missing</td>
-<td align="left">3,216 (1.70%)</td>
+<td align="left">   Unknown</td>
+<td align="left">3,216/189,426 (2)</td>
 </tr>
 <tr class="odd">
 <td align="left"><strong>reduced_price_lunch_qualified</strong></td>
@@ -426,8 +426,8 @@ frl_fulltrain &lt;- left_join(full_train, frl)</code></pre>
 <td align="left">132</td>
 </tr>
 <tr class="even">
-<td align="left">   Unknown/Missing</td>
-<td align="left">3,216 (1.70%)</td>
+<td align="left">   Unknown</td>
+<td align="left">3,216/189,426 (2)</td>
 </tr>
 <tr class="odd">
 <td align="left"><strong>missing</strong></td>
@@ -450,8 +450,8 @@ frl_fulltrain &lt;- left_join(full_train, frl)</code></pre>
 <td align="left">0</td>
 </tr>
 <tr class="even">
-<td align="left">   Unknown/Missing</td>
-<td align="left">3,216 (1.70%)</td>
+<td align="left">   Unknown</td>
+<td align="left">3,216/189,426 (2)</td>
 </tr>
 <tr class="odd">
 <td align="left"><strong>not_applicable</strong></td>
@@ -474,8 +474,8 @@ frl_fulltrain &lt;- left_join(full_train, frl)</code></pre>
 <td align="left">0</td>
 </tr>
 <tr class="even">
-<td align="left">   Unknown/Missing</td>
-<td align="left">3,216 (1.70%)</td>
+<td align="left">   Unknown</td>
+<td align="left">3,216/189,426 (2)</td>
 </tr>
 <tr class="odd">
 <td align="left"><strong>no_category_codes</strong></td>
@@ -498,8 +498,8 @@ frl_fulltrain &lt;- left_join(full_train, frl)</code></pre>
 <td align="left">920</td>
 </tr>
 <tr class="even">
-<td align="left">   Unknown/Missing</td>
-<td align="left">3,216 (1.70%)</td>
+<td align="left">   Unknown</td>
+<td align="left">3,216/189,426 (2)</td>
 </tr>
 <tr class="odd">
 <td align="left"><strong>n</strong></td>
@@ -522,8 +522,8 @@ frl_fulltrain &lt;- left_join(full_train, frl)</code></pre>
 <td align="left">3,144</td>
 </tr>
 <tr class="even">
-<td align="left">   Unknown/Missing</td>
-<td align="left">3,216 (1.70%)</td>
+<td align="left">   Unknown</td>
+<td align="left">3,216/189,426 (2)</td>
 </tr>
 </tbody>
 </table>
@@ -661,7 +661,7 @@ Interactions with lat:lon [trained]</code></pre>
 </div>
 <div id="preview-of-what-is-to-come-setting-up-a-model-and-workflow" class="section level2">
 <h2>Preview of what is to come: Setting up a model and workflow</h2>
-<p>Finally, we’re ready to create a model! This is discussed with more specificity for each model on their respective blog posts, but there are several common elemetns we will need to specify for each of our models.</p>
+<p>Finally, we’re ready to create a model! This is discussed with more specificity for each model on their respective blog posts, but there are several common elements we will need to specify for each of our models.</p>
 <ol style="list-style-type: decimal">
 <li>The model type: in this blog, we focus on three tree models, namely <code>bag_tree()</code>, <code>random_forest()</code> and <code>boost_tree()</code>.</li>
 <li>The engine: using <code>set_engine()</code> we specify which package or system will be used to fit the model</li>

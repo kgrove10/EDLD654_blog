@@ -17,7 +17,7 @@ tags: []
 <p><strong>What does the Bagged Tree Model do?</strong></p>
 <p>Bagged trees are a special case of random forests where there is no sampling of columns when each tree is built. A bagged tree approach creates multiple subsets of data from the training set where each of these subsets is used to train a given decision tree. The predictions from all the different subsets are averaged together, giving us a stronger prediction than one tree could do independently.</p>
 <p><strong>Hyperparameters to be optimized</strong></p>
-<p>Unlike random forrest, there is not a way to easily access the “out-of-the-box” (OOB) samples with <strong>{baguette}</strong>. Thankfully, we can tune the model similar to what we do with random forrest using the <strong>{ranger}</strong> package, and this will allow us to access the OOB samples. To fit a bagged tree with <strong>{ranger}</strong>, we set the <code>mtry</code> argument equal to the number of predictors in our data frame calculated by extracting the number of columns in the data and substracting one (to not account for the outcome).</p>
+<p>Unlike random forest, there is not a way to easily access the “out-of-the-box” (OOB) samples with <strong>{baguette}</strong>. Thankfully, we can tune the model similar to what we do with random forest using the <strong>{ranger}</strong> package, and this will allow us to access the OOB samples. To fit a bagged tree with <strong>{ranger}</strong>, we set the <code>mtry</code> argument equal to the number of predictors in our data frame calculated by extracting the number of columns in the data and subtracting one (to not account for the outcome).</p>
 <p>Overall, we tune the number of <code>trees</code> and <code>min_n</code> since <code>m_try</code> is already set depending on the number of predictors.</p>
 <p><strong>Why did we select this model?</strong></p>
 <p>We selected this model as one of our three fits because we wanted to explore several models that utilize decision trees. Bagged tree specifically leads to more stable model predictions as it reduces model variability. Thus, it is important to note here that bagging would not be recommended when the model already has low variance as it increases computational burdens without improving the model. For example, linear regression models will generally not change much in their model predictions when using bagging. Overall, the noisier our data is, the more bags (i.e. resamples) we add to reduce the noise.</p>
@@ -25,7 +25,7 @@ tags: []
 <p><strong>Bagged Tree Model Assumptions</strong></p>
 <p>Similar to the the decision trees model and other decision-tree based models, the bagged tree model share the same assumptions. Because decision trees function to split the data, they have no probabilistic model, and therefore bagging does not need to make any assumptions about the underlying data distribution.</p>
 <p><strong>Model Performance Evaluation</strong></p>
-<p>We will evaluate the performance of this model after training by applying it to our held out test split from the training data (also called the validation set). We will examine rmse (appropriately, the root mean squared error, the standard deviation of the residuals), rsq (R-squared, the proportion of variance in the dependent variable explained by the variables in our regression model), and huber-loss (a loss function that represents absolute error, and is less sensitive to outliers than the mse and rmse), but largely rely upon the rmse as our single evaluator of the performance of this and the other tree models we present in this blog in order to select our final model.</p>
+<p>We will evaluate the performance of this model after training by applying it to our held out test split from the training data (also called the validation set). We will examine rmse (the root mean squared error, the standard deviation of the residuals), and rsq (R-squared, the proportion of variance in the dependent variable explained by the variables in our regression model), but largely rely upon the rmse as our single evaluator of the performance of this and the other tree models we present in this blog in order to select our final model.</p>
 </div>
 <div id="fitting-the-bagged-tree-model" class="section level2">
 <h2>Fitting the Bagged Tree Model</h2>
@@ -33,6 +33,7 @@ tags: []
 <p><strong>Model Fitting Procedures</strong></p>
 <div id="model-fiting" class="section level3">
 <h3>Model Fiting</h3>
+<p>To fit the bagged tree model, we first set the mode, regression, the engine, <code>&quot;rpart&quot;</code>, and the number of bootstrap resamples we would like. Here, we are using the recommended number of 10, based on our course. We then combine the recipe we previously created, which is described in our <a href="https://edld654finalproject.netlify.app/2020/11/30/data-description/">data introduction</a>, and this model specification, which we call <code>mod_bag</code> into a workflow for our bagged tree model.</p>
 <pre class="r"><code>set.seed(500)
  
 #Specify model
@@ -46,6 +47,7 @@ mod_bag &lt;- bag_tree() %&gt;%
 wflow_bag &lt;- workflow() %&gt;% 
   add_recipe(rec) %&gt;%
   add_model(mod_bag)</code></pre>
+<p>We then use the <code>fit_resamples()</code> function to fit the workflow to our training data set. We ask for the rmse and rsq as our metrics, and use the argument <code>extract = function(x) extract_model(x))</code> in order to extract the models from this fit,</p>
 <pre class="r"><code>set.seed(500)
 
 fit_bag &lt;- fit_resamples(
@@ -60,7 +62,7 @@ collect_metrics(fit_bag)</code></pre>
 </div>
 <div id="model-turning" class="section level3">
 <h3>Model Turning</h3>
-<p>Next, we will tune the number of trees hyperparameter. We set min_n to 2. We will use a functions that pulls multiple RMSEs and we will graph them to figure out the optimnal number of bags needed for this data.</p>
+<p>Next, we will tune the number of trees hyperparameter. We set min_n to 2. We will use a function that pulls multiple RMSEs and we will graph them to figure out the optimal number of bags needed for this data. Of note, given the computational resources needed for this tuning, we will only test it on 1% of our data then apply the final number of trees to the full training and test data.</p>
 <pre class="r"><code>pull_auc &lt;- function(b) {
   # specify model
   mod &lt;- bag_tree() %&gt;% 
@@ -93,11 +95,11 @@ plan(sequential)</code></pre>
   geom_line() +
   geom_point()  </code></pre>
 {{% figure src="/plots/rmse_auc.png" alt="RMSE AUC" %}}
-<p>We see from the plot above that setting <span class="math inline">\(b\)</span> to 175 would be the optiomal number of trees.</p>
+<p>We see from the plot above that setting <span class="math inline">\(b\)</span> to 175 would be the optimal number of trees. Note that this visualization is based on 1% of the training data.</p>
 </div>
 <div id="bagged-trees-visualization" class="section level3">
 <h3>Bagged Trees Visualization</h3>
-<p>The plot below shows the root nodes from a bagged tree made of 60 trees (6 folds x 10 resamples). As noted based on our RMSE, the optimal number of resamples (trees) is 175 but for time and computional eficiency purposes we only set it to 10 in this visualization.</p>
+<p>The plot below shows the root nodes from a bagged tree made of 60 trees (6 folds x 10 resamples). As noted based on our RMSE, the optimal number of resamples (trees) is 175 but for time and computational efficiency purposes we only set it to 10 for this visualization.</p>
 <pre class="r"><code># extract roots
 bag_roots &lt;-  function(x){
   x %&gt;% 
@@ -121,10 +123,10 @@ bag_roots(fit_bag) %&gt;%
 {{% figure src="/plots/bagtree_root.png" alt="Root nodes" %}}
 <p><strong>Model Fitting Results</strong></p>
 <p>Finally, in order to get the results of our model with the tuned trees hyperparameter (175), we will apply this model to our full training dataset.</p>
-<p>From the fitted model, we then extract just the metrics in order to compare the results of this bagged tree model with our random forest and boosted tree models in order to choose a final model to make student score predictions from the test data (test.csv) and to submit to kaggle.</p>
-<p>The following table shows our model fitting metrics.</p>
+<p>From the fitted model, we then extract just the metrics in order to compare the results of this bagged tree model with our random forest and boosted tree models in order to choose a final model to make student score predictions from the test data (<code>test.csv</code>) and to submit to Kaggle.</p>
+<p>The following table shows our model fitting metrics for the tuned bagged tree model.</p>
 {{% figure src="/plots/metrics.png" alt="Metrics Table" %}}
-<p>The following code shows our the final fit of the model to the testing data to make predictions.</p>
+<p>The following code shows how we created predictions for the final fit of the model to the testing data. Note that for computational efficiency, since the other models had to be run on Talapas, we generated these predictions for each of our models, but only submitted the predictions for the testing set on Kaggle that corresponded to the model with the best rmse based on our validation set. For more information, see our <a href="https://edld654finalproject.netlify.app/2020/12/05/final-model-fit/">final fit post</a>.</p>
 <pre class="r"><code>#make predictions on test.csv
 full_test &lt;- read_csv(&quot;data/test.csv&quot;,
                       col_types = cols(.default = col_guess(), 

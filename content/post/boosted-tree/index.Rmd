@@ -65,9 +65,9 @@ If you can believe it, there are even **MORE** hyperparameters we can consider i
 
 *Loss Reduction* - controls the tree depth and specifies a minimum loss required for further splits. In other words, it stops growing the tree if the change in the cost function doesn't surpass a given threshold (see below for discussion of cost function). Although values range from 0 to infinity, values 1-20 are common.
 
-*L1 and L2 penalities* - also possible to add if model is continuing to overfit
+*L1 and L2 penalties* - also possible to add if model is continuing to overfit
 
-AND we can also vary our *early stopping* value. Although not a technical hyperparameter, it denotes a specific number of iterations that the algorithm will stop after if it's not improving predictions. This is another way to control the algoithm speed and protect against overfitting of the data. 
+AND we can also vary our *early stopping* value. Although not a technical hyperparameter, it denotes a specific number of iterations that the algorithm will stop after if it's not improving predictions. This is another way to control the algorithm speed and protect against overfitting of the data. 
 
 Because we are using `XGBoost` through `tidymodels`, we will specify a large number of trees and an early stopping rule. We will then tune the learning rate, then the tree specific parameters, and then the stochastic components. 
 
@@ -90,7 +90,7 @@ The model continues to move down the gradient in an iterative fashion to minimiz
 
 **Model Fitting Procedures** 
 
-A description of our data preparation procedures can be found [here](https://edld654finalproject.netlify.app/2020/11/30/data-description/). The model fit was completed using the University of Oregon's "Talapas" Supercomputer, so while some example code will be included with this post, computations were conducted elsewhere, and the full code can be found on our [GitHub here](https://github.com/kgrove10/EDLD654_blog/blob/main/static/boosted_tree_model). Unfortunately, although I would love to share the .RDS file that talapas provides us with after the model is done running, I couldn't upload it to github because it was too big, and github wanted me to upgrade my storage. 
+A description of our data preparation procedures can be found [here](https://edld654finalproject.netlify.app/2020/11/30/data-description/). The model fit was completed using the University of Oregon's "Talapas" Supercomputer, so while some example code will be included with this post, computations were conducted elsewhere, and the full code can be found on our [GitHub here](https://github.com/kgrove10/EDLD654_blog/blob/main/static/boosted_tree_model). Unfortunately, although I would love to share the .RDS file that Talapas provides us with after the model is done running, I couldn't upload it to github because it was too big, and github wanted me to upgrade my storage. 
 
 We will start out with a default Boosted Tree Model with no tuned hyperparameters. The arguments defined are based on recommendations from Daniel Anderson and Joe Nese. 
 
@@ -334,7 +334,6 @@ knitr::kable(testres)
 ```
 
 
-
 Then we would follow a similar procedure as above to submit to predict on our unseen data and submit to Kaggle! 
 
 
@@ -375,6 +374,7 @@ show_best(tune_tree_depth, "rmse")
 
 
 If we wanted to tune regularization, randomness, and learning rate one more time, we could use this code (although we did not do this for our model predictions because it just took way too long!)
+
 
 ```{r tune 3, eval = FALSE}
 
@@ -446,6 +446,39 @@ autoplot(final_lr)
 #show best
 show_best(final_lr, "rmse")
 
+```
+
+Finally, as in our bagged tree and random forest models, we used the following code to make predictions for the test dataset, `test.csv` from the tuned and untuned boosted tree model. Note that for computational efficiency, since the other models had to be run on Talapas, we generated these predictions for each of our models, but only submitted the predictions for the testing set on Kaggle that corresponded to the model with the best rmse based on our validation set. For more information, see our [final fit post](https://edld654finalproject.netlify.app/2020/12/05/final-model-fit/).   
+
+```{r finalfit, eval = FALSE}
+#use untuned model to make predictions for test dataset
+preds_final <- predict(fit_workflow, full_test_FRL) #use model to make predictions for test dataset
+
+saveRDS(preds_final, "BTPreds.Rds")
+
+head(preds_final)
+
+pred_frame <- tibble(Id = full_test_FRL$id, Predicted = preds_final$.pred)
+head(pred_frame, 20)
+nrow(pred_frame)
+
+#create prediction file
+write_csv(pred_frame, "fit_bt.csv")
+
+
+#use tuned model to make predictions for test dataset
+preds_final <- predict(fit_workflow, full_test_FRL) #use model to make predictions for test dataset
+
+saveRDS(preds_final, "BTPreds_Tuned.Rds")
+
+head(preds_final)
+
+pred_frame <- tibble(Id = full_test_FRL$id, Predicted = preds_final$.pred)
+head(pred_frame, 20)
+nrow(pred_frame)
+
+#create prediction file
+write_csv(pred_frame, "fit_bt_Tuned.csv")
 ```
 
 
